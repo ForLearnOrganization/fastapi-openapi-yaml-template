@@ -1,7 +1,8 @@
 """Main API router for version 1."""
 
 from fastapi import APIRouter
-from .endpoints import health, text, external
+
+from .endpoints import external, health, text
 
 # Create main API router
 api_router = APIRouter()

@@ -1,7 +1,7 @@
 # main.py
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 # FastAPI アプリケーションの初期化
 app = FastAPI(title="FastAPI + localLLM Tutorial")
@@ -19,11 +19,7 @@ tokenizer = AutoTokenizer.from_pretrained("rinna/japanese-gpt2-medium", use_fast
 model = AutoModelForCausalLM.from_pretrained("rinna/japanese-gpt2-medium")
 
 # pipeline にトークナイザーとモデルを渡す
-generator = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer
-)
+generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 
 # リクエストボディのスキーマ定義

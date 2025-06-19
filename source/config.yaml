@@ -1,0 +1,63 @@
+# FastAPIアプリケーション用設定ファイル
+# YAMLベースの設定と型生成のデモンストレーション
+
+app:
+  name: "localLLM-FastAPI"
+  version: "1.0.0"
+  description: "自動生成ドキュメントとクライアント型生成機能を持つスケーラブルなFastAPIアプリケーション"
+  debug: true
+
+api:
+  v1_prefix: "/api/v1"
+  allowed_hosts:
+    - "*"
+
+cors:
+  origins:
+    - "http://localhost:3000"
+    - "http://localhost:8000"
+    - "http://127.0.0.1:3000"
+    - "http://127.0.0.1:8000"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+external_apis:
+  # 外部APIサービスの設定
+  weather:
+    mock_mode: true
+    api_key: ""  # 環境変数や.envファイルで設定
+    base_url: "https://api.openweathermap.org/data/2.5"
+  
+  quotes:
+    mock_mode: true
+    base_url: "https://api.quotable.io"
+  
+  facts:
+    mock_mode: true
+    base_url: "https://uselessfacts.jsph.pl"
+
+generation:
+  # コード生成の設定
+  typescript:
+    output_directory: "generated"
+    include_client_helpers: true
+    use_interfaces: true
+  
+  schemas:
+    export_json: true
+    export_yaml: true
+    export_typescript: true
+
+features:
+  # 機能フラグ
+  text_generation: true
+  external_apis: true
+  health_checks: true
+  metrics: false  # 本番環境では有効にすることが可能
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

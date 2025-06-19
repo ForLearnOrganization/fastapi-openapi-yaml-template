@@ -6,24 +6,25 @@
 クライアントサイド型生成用にJSON、YAML、TypeScript形式で保存します。
 """
 
-import json
-import yaml
 import asyncio
-import uvicorn
+import json
 import threading
 import time
-import httpx
 from pathlib import Path
+
+import httpx
+import uvicorn
+import yaml
 
 
 def start_server_temporarily():
     """サーバーを別スレッドで起動します。"""
     config = uvicorn.Config("main:app", host="127.0.0.1", port=8001, log_level="error")
     server = uvicorn.Server(config)
-    
+
     def run_server():
         asyncio.run(server.serve())
-    
+
     thread = threading.Thread(target=run_server, daemon=True)
     thread.start()
     return server, thread
@@ -40,7 +41,7 @@ async def fetch_openapi_schema(base_url: str = "http://127.0.0.1:8001") -> dict:
                     return response.json()
             except httpx.ConnectError:
                 await asyncio.sleep(1)
-        
+
         raise Exception("FastAPIサーバーに接続できませんでした")
 
 
@@ -48,19 +49,19 @@ def save_openapi_files(schema: dict, output_dir: str = "generated"):
     """OpenAPIスキーマを複数の形式で保存します。"""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
-    
+
     # Save as JSON
     json_path = output_path / "openapi.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2, ensure_ascii=False)
     print(f"✅ OpenAPIのJSONスキーマを保存しました: {json_path}")
-    
+
     # Save as YAML
     yaml_path = output_path / "openapi.yaml"
     with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.dump(schema, f, default_flow_style=False, allow_unicode=True)
     print(f"✅ OpenAPIのYAMLスキーマを保存しました: {yaml_path}")
-    
+
     # Generate TypeScript types (basic structure)
     typescript_path = output_path / "api-types.ts"
     generate_typescript_types(schema, typescript_path)
@@ -69,8 +70,11 @@ def save_openapi_files(schema: dict, output_dir: str = "generated"):
 
 def generate_typescript_types(schema: dict, output_path: Path):
     """OpenAPIスキーマから基本的なTypeScript型定義を生成します。"""
-    types_content = """// OpenAPIスキーマから自動生成されたTypeScript型定義
-// 生成日時: """ + time.strftime("%Y-%m-%d %H:%M:%S") + """
+    types_content = (
+        """// OpenAPIスキーマから自動生成されたTypeScript型定義
+// 生成日時: """
+        + time.strftime("%Y-%m-%d %H:%M:%S")
+        + """
 
 // ベース型
 export interface ApiResponse<T> {
@@ -80,31 +84,32 @@ export interface ApiResponse<T> {
 }
 
 """
-    
+    )
+
     # Extract components/schemas if they exist
     components = schema.get("components", {})
     schemas = components.get("schemas", {})
-    
+
     for schema_name, schema_def in schemas.items():
         if schema_def.get("type") == "object":
             interface_content = f"export interface {schema_name} {{\n"
-            
+
             properties = schema_def.get("properties", {})
             required_fields = schema_def.get("required", [])
-            
+
             for prop_name, prop_def in properties.items():
                 is_required = prop_name in required_fields
                 prop_type = convert_openapi_type_to_typescript(prop_def)
                 optional = "" if is_required else "?"
                 description = prop_def.get("description", "")
-                
+
                 if description:
                     interface_content += f"  /** {description} */\n"
                 interface_content += f"  {prop_name}{optional}: {prop_type};\n"
-            
+
             interface_content += "}\n\n"
             types_content += interface_content
-    
+
     # Add API client helper types
     types_content += """
 // API endpoint paths
@@ -211,7 +216,7 @@ export function createApiClient(baseUrl: string, options?: Partial<ApiClientConf
   });
 }
 """
-    
+
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(types_content)
 
@@ -220,7 +225,7 @@ def convert_openapi_type_to_typescript(prop_def: dict) -> str:
     """OpenAPIプロパティ定義をTypeScript型に変換します。"""
     prop_type = prop_def.get("type", "any")
     prop_format = prop_def.get("format")
-    
+
     if prop_type == "string":
         if prop_format == "date-time":
             return "string"  # or Date if you prefer
@@ -248,19 +253,19 @@ def convert_openapi_type_to_typescript(prop_def: dict) -> str:
 async def main():
     """OpenAPIスキーマファイル生成のメイン関数。"""
     print("🚀 OpenAPIスキーマ抽出のためにFastAPIサーバーを起動中...")
-    
+
     # Start server temporarily
     server, thread = start_server_temporarily()
-    
+
     try:
         # Fetch OpenAPI schema
         print("📡 OpenAPIスキーマを取得中...")
         schema = await fetch_openapi_schema()
-        
+
         # Save schema files
         print("💾 スキーマファイルを保存中...")
         save_openapi_files(schema)
-        
+
         print("\n✅ スキーマ生成が正常に完了しました！")
         print("\n生成されたファイル:")
         print("  - generated/openapi.json (OpenAPIツール用)")
@@ -271,10 +276,10 @@ async def main():
         print("  2. APIコールで型を使用")
         print("  3. API_ENDPOINTS定数からエンドポイントをインポート")
         print("  4. fetchベースのAPIクライアントを使用（axiosではなく）")
-        
+
     except Exception as e:
         print(f"❌ スキーマ生成エラー: {e}")
-    
+
     finally:
         # Note: Server will be stopped when the script ends due to daemon thread
         print("\n🛑 一時サーバーを停止中...")

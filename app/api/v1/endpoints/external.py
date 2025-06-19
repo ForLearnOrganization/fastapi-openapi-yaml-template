@@ -1,9 +1,11 @@
 """外部APIエンドポイント"""
 
-from fastapi import APIRouter, HTTPException
-from app.models import WeatherRequest, WeatherResponse, QuoteResponse, FactResponse
-from app.services.external_service import ExternalAPIService
 import logging
+
+from fastapi import APIRouter, HTTPException
+
+from app.models import FactResponse, QuoteResponse, WeatherRequest, WeatherResponse
+from app.services.external_service import ExternalAPIService
 
 router = APIRouter()
 external_service = ExternalAPIService()
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 async def get_weather(request: WeatherRequest):
     """
     都市の天気情報を取得します。
-    
+
     現在の環境では外部APIアクセスが制限される可能性があるため、
     このエンドポイントはモック天気データを提供します。
     """
@@ -23,14 +25,16 @@ async def get_weather(request: WeatherRequest):
         return result
     except Exception as e:
         logger.error(f"天気API呼び出しに失敗しました: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"天気データが利用できません: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"天気データが利用できません: {str(e)}"
+        )
 
 
 @router.get("/quote", response_model=QuoteResponse)
 async def get_random_quote():
     """
     ランダムな名言を取得します。
-    
+
     厳選されたコレクションからランダムな名言を返します。
     """
     try:
@@ -45,7 +49,7 @@ async def get_random_quote():
 async def get_random_fact():
     """
     ランダムな興味深い豆知識を取得します。
-    
+
     ランダムな教育的事実を返します。
     """
     try:
@@ -60,7 +64,7 @@ async def get_random_fact():
 async def get_random_joke():
     """
     ランダムなプログラミングジョークを取得します。
-    
+
     ランダムなプログラミング関連のジョークを返します。
     """
     try:
@@ -68,4 +72,6 @@ async def get_random_joke():
         return result
     except Exception as e:
         logger.error(f"ジョークAPI呼び出しに失敗しました: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"ジョークが利用できません: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"ジョークが利用できません: {str(e)}"
+        )

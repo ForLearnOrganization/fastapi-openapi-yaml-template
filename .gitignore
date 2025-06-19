@@ -28,7 +28,6 @@ wheels/
 .env.production.local
 
 # IDEs
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -38,8 +37,14 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Generated files (optional - uncomment if you don't want to commit generated types)
-# generated/
+# Generated documentation and types
+docs/generated/
+docs/static/
+generated/
+
+# VSCode settings (keep extensions.json but ignore user settings)
+.vscode/settings.json
+!.vscode/extensions.json
 
 # Logs
 *.log

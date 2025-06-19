@@ -25,6 +25,7 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
 
 - Python 3.9+
 - Poetry（依存関係管理用）
+- Node.js（フロントエンド開発時）
 
 ### インストール
 
@@ -39,48 +40,268 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
    poetry install
    ```
 
-3. **APIサーバの起動**
+3. **開発環境の設定**
+   ```bash
+   poetry shell  # 仮想環境をアクティベート
+   ```
+
+4. **APIサーバの起動**
    ```bash
    poetry run uvicorn main:app --reload
    ```
 
-4. **アプリケーションへのアクセス**
+5. **アプリケーションへのアクセス**
    - **APIドキュメント**: http://localhost:8000/docs
    - **代替ドキュメント**: http://localhost:8000/redoc
    - **ルートページ**: http://localhost:8000/
-   - **ヘルスチェック**: http://localhost:8000/api/v1/health/
 
 ## 📁 プロジェクト構造
 
 ```
 localllm-fastapi/
-├── app/
-│   ├── api/v1/
-│   │   ├── endpoints/
-│   │   │   ├── health.py        # ヘルスチェックエンドポイント
-│   │   │   ├── text.py          # テキスト生成エンドポイント
-│   │   │   └── external.py      # 外部APIエンドポイント
-│   │   └── __init__.py          # APIルーター設定
-│   ├── core/
-│   │   └── config.py            # アプリケーション設定
-│   ├── models/
-│   │   └── __init__.py          # Pydanticモデルとスキーマ
-│   ├── services/
-│   │   ├── text_service.py      # テキスト生成サービス
-│   │   └── external_service.py  # 外部APIサービス
-│   └── utils/
-│       └── openapi.py           # OpenAPIユーティリティ
-├── scripts/
-│   ├── generate_client_types.py # 型生成用Pythonスクリプト
-│   └── generate_types.sh        # 型生成用シェルスクリプト
-├── generated/                   # 自動生成ファイル（初回実行時に作成）
-│   ├── openapi.json
-│   ├── openapi.yaml
-│   └── api-types.ts
-├── config.yaml                 # 設定ファイル
-├── main.py                     # アプリケーションエントリーポイント
-└── pyproject.toml              # Poetry設定
+├── .vscode/                    # VSCode設定
+│   ├── settings.json          # エディタ設定（Ruff自動フォーマット）
+│   └── extensions.json        # 推奨拡張機能
+├── app/                       # アプリケーションソース
+│   ├── api/v1/endpoints/      # APIルートハンドラー
+│   ├── core/                  # 設定とコア機能
+│   ├── models/               # Pydanticスキーマ
+│   ├── services/             # ビジネスロジック
+│   └── utils/                # ユーティリティ関数
+├── scripts/                   # 型生成・ドキュメント生成スクリプト
+│   ├── generate_client_types.py
+│   ├── generate_types.sh
+│   ├── generate_docs.py       # 📄 新規: HTML ドキュメント生成
+│   └── generate_docs.sh       # 📄 新規: ドキュメント生成スクリプト
+├── docs/                      # 📁 新規: ドキュメント管理
+│   ├── generated/            # 🤖 自動生成: OpenAPIスキーマ
+│   └── static/               # 🤖 自動生成: 静的HTMLドキュメント
+├── generated/                 # 🤖 自動生成: TypeScript型定義
+├── source/                    # 📁 手動管理: ソース用YAML等
+├── config.yaml               # アプリケーション設定
+└── main.py                   # アプリケーションエントリーポイント
 ```
+
+## 🔄 開発運用フロー
+
+### バックエンド開発者の作業フロー
+
+1. **Pydanticモデルの定義/更新**
+   ```python
+   # app/models/で新しいAPIモデルを定義
+   class NewFeatureRequest(BaseModel):
+       name: str
+       description: str
+   ```
+
+2. **APIエンドポイントの実装**
+   ```python
+   # app/api/v1/endpoints/で新しいルーターを作成
+   @router.post("/new-feature", response_model=NewFeatureResponse)
+   async def create_feature(request: NewFeatureRequest):
+       # ビジネスロジックの実装
+   ```
+
+3. **ドキュメント・型定義の生成**
+   ```bash
+   # 一括生成（推奨）
+   ./scripts/generate_docs.sh
+
+   # 個別生成
+   python scripts/generate_docs.py      # HTMLドキュメント
+   ./scripts/generate_types.sh          # TypeScript型定義
+   ```
+
+4. **動作確認**
+   ```bash
+   # サーバー起動
+   poetry run uvicorn main:app --reload
+   
+   # ドキュメント確認
+   open http://localhost:8000/docs
+   ```
+
+### フロントエンド開発者の作業フロー
+
+1. **生成された型定義の確認**
+   ```bash
+   # バックエンド開発者が生成した型定義を確認
+   cat generated/api-types.ts
+   ```
+
+2. **APIクライアントの実装**
+   ```typescript
+   // Next.jsアプリケーション内
+   import { NewFeatureRequest, NewFeatureResponse, API_ENDPOINTS } from '@/types/api';
+
+   // モダンなfetch APIを使用（axiosではなく）
+   const createFeature = async (request: NewFeatureRequest): Promise<NewFeatureResponse> => {
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.NEW_FEATURE}`, {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify(request),
+     });
+
+     if (!response.ok) {
+       throw new Error(`HTTP error! status: ${response.status}`);
+     }
+
+     return response.json();
+   };
+   ```
+
+3. **エラーハンドリング付きの完全な実装例**
+   ```typescript
+   // app/lib/api.ts
+   class APIClient {
+     private baseURL: string;
+
+     constructor(baseURL: string) {
+       this.baseURL = baseURL;
+     }
+
+     async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+       const url = `${this.baseURL}${endpoint}`;
+       const config: RequestInit = {
+         headers: {
+           'Content-Type': 'application/json',
+           ...options.headers,
+         },
+         ...options,
+       };
+
+       const response = await fetch(url, config);
+
+       if (!response.ok) {
+         throw new Error(`API Error: ${response.status} ${response.statusText}`);
+       }
+
+       return response.json();
+     }
+
+     // 型安全なメソッド例
+     async getHealth(): Promise<HealthResponse> {
+       return this.request<HealthResponse>(API_ENDPOINTS.HEALTH);
+     }
+
+     async generateText(request: GenerateRequest): Promise<GenerateResponse> {
+       return this.request<GenerateResponse>(API_ENDPOINTS.TEXT_GENERATE, {
+         method: 'POST',
+         body: JSON.stringify(request),
+       });
+     }
+   }
+
+   export const apiClient = new APIClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+   ```
+
+### チーム間の連携フロー
+
+1. **API設計の合意**
+   - バックエンド開発者がPydanticモデルでAPIスキーマを定義
+   - フロントエンド開発者が`docs/generated/openapi.yaml`を確認
+   - 必要に応じてSlack/GitHub等でレビュー・議論
+
+2. **型定義の共有**
+   ```bash
+   # バックエンド開発者が型定義を生成・コミット
+   ./scripts/generate_docs.sh
+   git add docs/ generated/
+   git commit -m "docs: API仕様更新 - 新機能追加"
+   git push
+   ```
+
+3. **フロントエンド開発開始**
+   ```bash
+   # フロントエンド開発者が最新の型定義を取得
+   git pull
+   # generated/api-types.tsを使用して型安全な開発を開始
+   ```
+
+## 🔧 開発ツール設定
+
+### VSCode自動フォーマット設定
+
+プロジェクトには`.vscode/settings.json`が含まれており、以下の機能が自動で有効になります：
+
+- **Ruffによる自動フォーマット**: ファイル保存時にコード整形
+- **インポート自動整理**: isort互換の自動インポート整理
+- **構文エラー検出**: リアルタイムでのコード検証
+
+### Ruff vs Black + isort の選択理由
+
+**🚀 Ruffを選択した理由:**
+
+1. **パフォーマンス**: Rustで書かれており、Black+isortより10-100倍高速
+2. **統合性**: linting（flake8相当）とformatting（black相当）を1つのツールで提供
+3. **設定簡素化**: pyproject.toml内の単一設定で完了
+4. **互換性**: BlackやisortとほぼUIベル・フォーマット結果
+5. **メンテナンス**: アクティブな開発と定期的な更新
+
+**従来のBlack + isortからの移行メリット:**
+- 設定ファイルの簡素化（pyproject.tomlの[tool.ruff]セクションのみ）
+- ビルド・CI時間の短縮
+- VSCodeでの応答性向上
+- 依存関係の削減
+
+**設定例（pyproject.toml）:**
+```toml
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.isort]
+known-first-party = ["app"]
+```
+
+### 手動でのフォーマット実行
+
+```bash
+# すべてのPythonファイルをフォーマット
+poetry run ruff format .
+
+# Linting実行（エラー検出）
+poetry run ruff check .
+
+# Linting + 自動修正
+poetry run ruff check . --fix
+## 📄 HTMLドキュメント生成
+
+### 静的HTMLドキュメントの生成
+
+このプロジェクトでは、静的HTMLドキュメントを生成して、開発環境の外でもAPIドキュメントを確認できます。
+
+```bash
+# すべてのドキュメントを一括生成
+./scripts/generate_docs.sh
+
+# または個別生成
+python scripts/generate_docs.py
+```
+
+### 生成されるファイル
+
+| ファイル | 説明 | 用途 |
+|---------|------|------|
+| `docs/generated/openapi.json` | 機械可読なAPIスキーマ | API仕様の自動検証・統合 |
+| `docs/generated/openapi.yaml` | 人間可読なAPIスキーマ | チームでのAPI仕様レビュー |
+| `docs/static/redoc.html` | ReDoc形式の静的HTML | オフライン・配布用ドキュメント |
+| `docs/static/swagger.html` | Swagger UI形式の静的HTML | インタラクティブなAPI試行 |
+| `generated/api-types.ts` | TypeScript型定義 | フロントエンド開発用 |
+
+### 静的HTMLドキュメントの利用
+
+1. **ReDocドキュメント**: `docs/static/redoc.html`をブラウザで開く
+2. **Swagger UIドキュメント**: `docs/static/swagger.html`をブラウザで開く
+3. **チーム配布**: `docs/static/`フォルダをzipで配布
+4. **CI/CDとの統合**: ビルド時に自動生成・デプロイ
 
 ## 🔧 APIエンドポイント
 
@@ -129,163 +350,15 @@ curl -X POST "http://localhost:8000/api/v1/external/weather" \
 curl -X GET "http://localhost:8000/api/v1/external/quote"
 ```
 
-## 🔄 開発運用フロー
-
-このプロジェクトでは **FastAPIコード → OpenAPIスキーマ → TypeScript型定義** の流れで型安全な開発を実現します。
-
-### 運用フロー概要
-
-```mermaid
-graph LR
-    A[FastAPIコード<br/>app/models/*.py] --> B[OpenAPIスキーマ生成<br/>generated/*.yaml/json]
-    B --> C[TypeScript型生成<br/>generated/api-types.ts]
-    C --> D[Next.jsプロジェクト<br/>型安全なAPI呼び出し]
-    
-    E[バックエンド担当者] --> A
-    F[フロントエンド担当者] --> |確認・合意| B
-    F --> D
-```
-
-### バックエンド担当者の作業手順
-
-1. **Pydanticモデルの定義/更新**
-   ```bash
-   # app/models/__init__.py でAPIリクエスト/レスポンスモデルを定義
-   vim app/models/__init__.py
-   ```
-
-2. **エンドポイントの実装**
-   ```bash
-   # 新しいエンドポイントを app/api/v1/endpoints/ に追加
-   vim app/api/v1/endpoints/new_feature.py
-   ```
-
-3. **ルーターへの登録**
-   ```bash
-   # app/api/v1/__init__.py でルーターを登録
-   vim app/api/v1/__init__.py
-   ```
-
-4. **OpenAPIスキーマの生成・確認**
-   ```bash
-   # サーバーを起動してスキーマを確認
-   poetry run uvicorn main:app --reload
-   
-   # ブラウザで http://localhost:8000/docs にアクセスしてAPI仕様を確認
-   # 自動生成スキーマは http://localhost:8000/openapi.json で確認可能
-   ```
-
-5. **フロントエンド向け型定義の生成**
-   ```bash
-   # TypeScript型定義を生成
-   ./scripts/generate_types.sh
-   ```
-
-### フロントエンド担当者の作業手順
-
-1. **API仕様の確認・合意**
-   ```bash
-   # 生成されたOpenAPIスキーマを確認
-   cat generated/openapi.yaml
-   
-   # または Swagger UI で確認: http://localhost:8000/docs
-   ```
-
-2. **TypeScript型定義の取得**
-   ```bash
-   # 最新の型定義を生成（バックエンド担当者と調整）
-   ./scripts/generate_types.sh
-   
-   # Next.jsプロジェクトに型定義をコピー
-   cp generated/api-types.ts your-nextjs-project/types/api.ts
-   ```
-
-3. **Next.jsプロジェクトでの型安全なAPI呼び出し**
-   ```typescript
-   // types/api.ts から型定義をインポート
-   import { WeatherRequest, WeatherResponse, API_ENDPOINTS } from './types/api';
-
-   // fetchを使用した型安全なAPI呼び出し
-   const getWeather = async (request: WeatherRequest): Promise<WeatherResponse> => {
-     const response = await fetch(
-       `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.EXTERNAL_WEATHER}`,
-       {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: JSON.stringify(request),
-       }
-     );
-     
-     if (!response.ok) {
-       throw new Error(`HTTP error! status: ${response.status}`);
-     }
-     
-     return response.json() as WeatherResponse;
-   };
-   ```
-
-### 新しいエンドポイント追加時の完全な手順
-
-1. **Pydanticモデルの定義** (`app/models/__init__.py`)
-   ```python
-   class NewFeatureRequest(BaseModel):
-       param1: str = Field(..., description="パラメータ1の説明")
-       param2: Optional[int] = Field(None, description="オプションパラメータ")
-
-   class NewFeatureResponse(BaseModel):
-       result: str = Field(..., description="処理結果")
-       status: str = Field(..., description="ステータス")
-   ```
-
-2. **サービスロジックの実装** (`app/services/`)
-   ```python
-   # app/services/new_feature_service.py
-   async def process_new_feature(request: NewFeatureRequest) -> NewFeatureResponse:
-       # ビジネスロジックを実装
-       pass
-   ```
-
-3. **エンドポイントの実装** (`app/api/v1/endpoints/`)
-   ```python
-   # app/api/v1/endpoints/new_feature.py
-   from fastapi import APIRouter
-   from app.models import NewFeatureRequest, NewFeatureResponse
-   from app.services.new_feature_service import process_new_feature
-
-   router = APIRouter()
-
-   @router.post("/new-feature", response_model=NewFeatureResponse)
-   async def new_feature_endpoint(request: NewFeatureRequest):
-       """新機能のエンドポイント"""
-       return await process_new_feature(request)
-   ```
-
-4. **ルーターの登録** (`app/api/v1/__init__.py`)
-   ```python
-   from app.api.v1.endpoints import new_feature
-   
-   # ルーターを追加
-   api_router.include_router(new_feature.router, tags=["new-feature"])
-   ```
-
-5. **型定義の更新・配布**
-   ```bash
-   # 型定義を再生成
-   ./scripts/generate_types.sh
-   
-   # フロントエンドチームに更新を通知
-   git add generated/
-   git commit -m "feat: 新機能APIエンドポイントの型定義を追加"
-   ```
-
 ## 📦 クライアントサイド型生成
 
 ### 型生成コマンド
 
 ```bash
-# シェルスクリプトを使用（推奨）
+# すべてのドキュメント・型を一括生成（推奨）
+./scripts/generate_docs.sh
+
+# TypeScript型のみ生成
 ./scripts/generate_types.sh
 
 # または Pythonスクリプト直接実行
@@ -465,14 +538,15 @@ external_apis:
 poetry run pytest
 ```
 
-### コードフォーマット
+### コードフォーマット・リンティング
 ```bash
-poetry run black .
-poetry run isort .
-```
+# Ruffによる自動フォーマット（推奨）
+poetry run ruff format .
 
-### 型チェック
-```bash
+# Linting + 自動修正
+poetry run ruff check . --fix
+
+# 型チェック
 poetry run mypy .
 ```
 
@@ -545,13 +619,18 @@ CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "800
   poetry shell
   ```
 
+- **ドキュメント・型定義の一括生成**
+  ```bash
+  ./scripts/generate_docs.sh
+  ```
+
 ## 🤝 コントリビューション
 
 1. リポジトリをフォーク
 2. フィーチャーブランチを作成
 3. 変更を加える
 4. 該当する場合はテストを追加
-5. リンターとテストを実行
+5. Ruffでコードをフォーマット・チェック
 6. プルリクエストを送信
 
 ## 📄 ライセンス
@@ -563,6 +642,7 @@ CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "800
 - [FastAPI ドキュメント](https://fastapi.tiangolo.com/)
 - [Pydantic ドキュメント](https://pydantic-docs.helpmanual.io/)
 - [Poetry ドキュメント](https://python-poetry.org/docs/)
+- [Ruff ドキュメント](https://docs.astral.sh/ruff/)
 
 ---
 
