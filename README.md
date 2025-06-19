@@ -467,13 +467,54 @@ curl -X POST "http://localhost:8000/api/v1/external/weather" \
 curl -X GET "http://localhost:8000/api/v1/external/quote"
 ```
 
+## 📚 ドキュメント生成
+
+### 静的HTMLドキュメント
+当プロジェクトは静的HTMLドキュメントを自動生成し、`docs/static/` に格納します：
+
+- **Swagger UI**: `docs/static/swagger.html` - インタラクティブなAPI仕様書
+- **ReDoc**: `docs/static/redoc.html` - 読みやすいドキュメント形式
+
+### ドキュメント生成コマンド
+
+#### 全ドキュメント・型・コード生成
+```bash
+./scripts/generate_all.sh
+```
+
+#### ドキュメント専用生成
+```bash
+./scripts/generate_docs_only.sh
+# または
+python scripts/generate_docs_only.py
+```
+
+#### コード専用生成（型定義・ルーター）
+```bash
+./scripts/generate_code_only.sh
+# または  
+python scripts/generate_code_only.py
+```
+
+#### 個別生成
+```bash
+# TypeScript型定義のみ
+./scripts/generate_types.sh
+
+# APIルーターのみ
+python scripts/generate_router.py
+
+# 従来の統合生成（ドキュメント・型定義）
+python scripts/generate_docs.py
+```
+
 ## 📦 クライアントサイド型生成
 
 ### 型生成コマンド
 
 ```bash
 # すべてのドキュメント・型を一括生成（推奨）
-./scripts/generate_docs.sh
+./scripts/generate_all.sh
 
 # TypeScript型のみ生成
 ./scripts/generate_types.sh
