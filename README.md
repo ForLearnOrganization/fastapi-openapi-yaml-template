@@ -129,51 +129,309 @@ curl -X POST "http://localhost:8000/api/v1/external/weather" \
 curl -X GET "http://localhost:8000/api/v1/external/quote"
 ```
 
-## 📦 クライアントサイド型生成
+## 🔄 開発運用フロー
 
-Next.jsプロジェクト用のTypeScript型を生成：
+このプロジェクトでは **FastAPIコード → OpenAPIスキーマ → TypeScript型定義** の流れで型安全な開発を実現します。
 
-### シェルスクリプトを使用（推奨）
-```bash
-# すべての型とスキーマを生成
-./scripts/generate_types.sh
+### 運用フロー概要
+
+```mermaid
+graph LR
+    A[FastAPIコード<br/>app/models/*.py] --> B[OpenAPIスキーマ生成<br/>generated/*.yaml/json]
+    B --> C[TypeScript型生成<br/>generated/api-types.ts]
+    C --> D[Next.jsプロジェクト<br/>型安全なAPI呼び出し]
+    
+    E[バックエンド担当者] --> A
+    F[フロントエンド担当者] --> |確認・合意| B
+    F --> D
 ```
 
-### Pythonスクリプトを使用
-```bash
-poetry run python scripts/generate_client_types.py
-```
+### バックエンド担当者の作業手順
 
-### Next.js統合
-
-1. **生成された型をコピー**
+1. **Pydanticモデルの定義/更新**
    ```bash
+   # app/models/__init__.py でAPIリクエスト/レスポンスモデルを定義
+   vim app/models/__init__.py
+   ```
+
+2. **エンドポイントの実装**
+   ```bash
+   # 新しいエンドポイントを app/api/v1/endpoints/ に追加
+   vim app/api/v1/endpoints/new_feature.py
+   ```
+
+3. **ルーターへの登録**
+   ```bash
+   # app/api/v1/__init__.py でルーターを登録
+   vim app/api/v1/__init__.py
+   ```
+
+4. **OpenAPIスキーマの生成・確認**
+   ```bash
+   # サーバーを起動してスキーマを確認
+   poetry run uvicorn main:app --reload
+   
+   # ブラウザで http://localhost:8000/docs にアクセスしてAPI仕様を確認
+   # 自動生成スキーマは http://localhost:8000/openapi.json で確認可能
+   ```
+
+5. **フロントエンド向け型定義の生成**
+   ```bash
+   # TypeScript型定義を生成
+   ./scripts/generate_types.sh
+   ```
+
+### フロントエンド担当者の作業手順
+
+1. **API仕様の確認・合意**
+   ```bash
+   # 生成されたOpenAPIスキーマを確認
+   cat generated/openapi.yaml
+   
+   # または Swagger UI で確認: http://localhost:8000/docs
+   ```
+
+2. **TypeScript型定義の取得**
+   ```bash
+   # 最新の型定義を生成（バックエンド担当者と調整）
+   ./scripts/generate_types.sh
+   
+   # Next.jsプロジェクトに型定義をコピー
    cp generated/api-types.ts your-nextjs-project/types/api.ts
    ```
 
-2. **HTTPクライアントをインストール**（例：axios）
-   ```bash
-   npm install axios
-   ```
-
-3. **Next.jsコンポーネントで使用**
+3. **Next.jsプロジェクトでの型安全なAPI呼び出し**
    ```typescript
+   // types/api.ts から型定義をインポート
    import { WeatherRequest, WeatherResponse, API_ENDPOINTS } from './types/api';
-   import axios from 'axios';
 
+   // fetchを使用した型安全なAPI呼び出し
    const getWeather = async (request: WeatherRequest): Promise<WeatherResponse> => {
-     const response = await axios.post<WeatherResponse>(
+     const response = await fetch(
        `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.EXTERNAL_WEATHER}`,
-       request
+       {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify(request),
+       }
      );
-     return response.data;
+     
+     if (!response.ok) {
+       throw new Error(`HTTP error! status: ${response.status}`);
+     }
+     
+     return response.json() as WeatherResponse;
    };
    ```
 
-4. **環境変数を設定**
+### 新しいエンドポイント追加時の完全な手順
+
+1. **Pydanticモデルの定義** (`app/models/__init__.py`)
+   ```python
+   class NewFeatureRequest(BaseModel):
+       param1: str = Field(..., description="パラメータ1の説明")
+       param2: Optional[int] = Field(None, description="オプションパラメータ")
+
+   class NewFeatureResponse(BaseModel):
+       result: str = Field(..., description="処理結果")
+       status: str = Field(..., description="ステータス")
+   ```
+
+2. **サービスロジックの実装** (`app/services/`)
+   ```python
+   # app/services/new_feature_service.py
+   async def process_new_feature(request: NewFeatureRequest) -> NewFeatureResponse:
+       # ビジネスロジックを実装
+       pass
+   ```
+
+3. **エンドポイントの実装** (`app/api/v1/endpoints/`)
+   ```python
+   # app/api/v1/endpoints/new_feature.py
+   from fastapi import APIRouter
+   from app.models import NewFeatureRequest, NewFeatureResponse
+   from app.services.new_feature_service import process_new_feature
+
+   router = APIRouter()
+
+   @router.post("/new-feature", response_model=NewFeatureResponse)
+   async def new_feature_endpoint(request: NewFeatureRequest):
+       """新機能のエンドポイント"""
+       return await process_new_feature(request)
+   ```
+
+4. **ルーターの登録** (`app/api/v1/__init__.py`)
+   ```python
+   from app.api.v1.endpoints import new_feature
+   
+   # ルーターを追加
+   api_router.include_router(new_feature.router, tags=["new-feature"])
+   ```
+
+5. **型定義の更新・配布**
    ```bash
-   # .env.local
+   # 型定義を再生成
+   ./scripts/generate_types.sh
+   
+   # フロントエンドチームに更新を通知
+   git add generated/
+   git commit -m "feat: 新機能APIエンドポイントの型定義を追加"
+   ```
+
+## 📦 クライアントサイド型生成
+
+### 型生成コマンド
+
+```bash
+# シェルスクリプトを使用（推奨）
+./scripts/generate_types.sh
+
+# または Pythonスクリプト直接実行
+poetry run python scripts/generate_client_types.py
+```
+
+### Next.js統合の詳細手順
+
+1. **型定義ファイルのコピー**
+   ```bash
+   # プロジェクトルートから実行
+   cp generated/api-types.ts /path/to/your-nextjs-project/types/api.ts
+   ```
+
+2. **環境変数の設定**
+   ```bash
+   # .env.local に追加
    NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
+
+3. **共通APIクライアントの作成** (`lib/api-client.ts`)
+   ```typescript
+   import { ApiClientConfig, ApiEndpoint, HttpMethod } from '@/types/api';
+
+   class ApiClient {
+     private config: ApiClientConfig;
+
+     constructor(config: ApiClientConfig) {
+       this.config = config;
+     }
+
+     async request<T>(
+       endpoint: ApiEndpoint,
+       method: HttpMethod = 'GET',
+       data?: any
+     ): Promise<T> {
+       const url = `${this.config.baseUrl}${endpoint}`;
+       
+       const options: RequestInit = {
+         method,
+         headers: {
+           'Content-Type': 'application/json',
+           ...this.config.headers,
+         },
+       };
+
+       if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+         options.body = JSON.stringify(data);
+       }
+
+       const response = await fetch(url, options);
+       
+       if (!response.ok) {
+         throw new Error(`HTTP error! status: ${response.status}`);
+       }
+
+       return response.json();
+     }
+   }
+
+   // デフォルトクライアントインスタンス
+   export const apiClient = new ApiClient({
+     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+     timeout: 10000,
+   });
+   ```
+
+4. **型安全なAPI関数の作成** (`lib/api.ts`)
+   ```typescript
+   import { apiClient } from './api-client';
+   import { 
+     WeatherRequest, 
+     WeatherResponse, 
+     TextGenerateRequest, 
+     TextGenerateResponse,
+     API_ENDPOINTS 
+   } from '@/types/api';
+
+   // 天気API
+   export const getWeather = async (request: WeatherRequest): Promise<WeatherResponse> => {
+     return apiClient.request<WeatherResponse>(
+       API_ENDPOINTS.EXTERNAL_WEATHER, 
+       'POST', 
+       request
+     );
+   };
+
+   // テキスト生成API
+   export const generateText = async (request: TextGenerateRequest): Promise<TextGenerateResponse> => {
+     return apiClient.request<TextGenerateResponse>(
+       API_ENDPOINTS.TEXT_GENERATE, 
+       'POST', 
+       request
+     );
+   };
+
+   // ヘルスチェック
+   export const getHealthStatus = async () => {
+     return apiClient.request(API_ENDPOINTS.HEALTH, 'GET');
+   };
+   ```
+
+5. **Reactコンポーネントでの使用例**
+   ```typescript
+   'use client';
+   
+   import { useState } from 'react';
+   import { getWeather } from '@/lib/api';
+   import { WeatherRequest, WeatherResponse } from '@/types/api';
+
+   export default function WeatherComponent() {
+     const [weather, setWeather] = useState<WeatherResponse | null>(null);
+     const [loading, setLoading] = useState(false);
+
+     const fetchWeather = async () => {
+       setLoading(true);
+       try {
+         const request: WeatherRequest = {
+           city: 'Tokyo',
+           country_code: 'JP'
+         };
+         
+         const result = await getWeather(request);
+         setWeather(result);
+       } catch (error) {
+         console.error('天気データの取得に失敗しました:', error);
+       } finally {
+         setLoading(false);
+       }
+     };
+
+     return (
+       <div>
+         <button onClick={fetchWeather} disabled={loading}>
+           {loading ? '読み込み中...' : '天気を取得'}
+         </button>
+         {weather && (
+           <div>
+             <h3>{weather.city}の天気</h3>
+             <p>温度: {weather.temperature}°C</p>
+             <p>状況: {weather.description}</p>
+           </div>
+         )}
+       </div>
+     );
+   }
    ```
 
 ## ⚙️ 設定

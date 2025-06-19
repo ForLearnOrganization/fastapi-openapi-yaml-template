@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Script to generate OpenAPI schema files for client-side type generation.
+クライアントサイド型生成用のOpenAPIスキーマファイル生成スクリプト
 
-This script starts the FastAPI server temporarily to extract the OpenAPI schema,
-then saves it in both JSON and YAML formats for client-side type generation.
+このスクリプトはFastAPIサーバーを一時的に起動してOpenAPIスキーマを抽出し、
+クライアントサイド型生成用にJSON、YAML、TypeScript形式で保存します。
 """
 
 import json
@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 def start_server_temporarily():
-    """Start the server in a separate thread."""
+    """サーバーを別スレッドで起動します。"""
     config = uvicorn.Config("main:app", host="127.0.0.1", port=8001, log_level="error")
     server = uvicorn.Server(config)
     
@@ -30,7 +30,7 @@ def start_server_temporarily():
 
 
 async def fetch_openapi_schema(base_url: str = "http://127.0.0.1:8001") -> dict:
-    """Fetch OpenAPI schema from the running server."""
+    """実行中のサーバーからOpenAPIスキーマを取得します。"""
     async with httpx.AsyncClient() as client:
         # Wait for server to be ready
         for _ in range(30):  # Try for 30 seconds
@@ -41,11 +41,11 @@ async def fetch_openapi_schema(base_url: str = "http://127.0.0.1:8001") -> dict:
             except httpx.ConnectError:
                 await asyncio.sleep(1)
         
-        raise Exception("Could not connect to the FastAPI server")
+        raise Exception("FastAPIサーバーに接続できませんでした")
 
 
 def save_openapi_files(schema: dict, output_dir: str = "generated"):
-    """Save OpenAPI schema in multiple formats."""
+    """OpenAPIスキーマを複数の形式で保存します。"""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
     
@@ -53,26 +53,26 @@ def save_openapi_files(schema: dict, output_dir: str = "generated"):
     json_path = output_path / "openapi.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2, ensure_ascii=False)
-    print(f"✅ Saved OpenAPI JSON schema to: {json_path}")
+    print(f"✅ OpenAPIのJSONスキーマを保存しました: {json_path}")
     
     # Save as YAML
     yaml_path = output_path / "openapi.yaml"
     with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.dump(schema, f, default_flow_style=False, allow_unicode=True)
-    print(f"✅ Saved OpenAPI YAML schema to: {yaml_path}")
+    print(f"✅ OpenAPIのYAMLスキーマを保存しました: {yaml_path}")
     
     # Generate TypeScript types (basic structure)
     typescript_path = output_path / "api-types.ts"
     generate_typescript_types(schema, typescript_path)
-    print(f"✅ Generated TypeScript types to: {typescript_path}")
+    print(f"✅ TypeScript型定義を生成しました: {typescript_path}")
 
 
 def generate_typescript_types(schema: dict, output_path: Path):
-    """Generate basic TypeScript type definitions from OpenAPI schema."""
-    types_content = """// Auto-generated TypeScript types from OpenAPI schema
-// Generated at: """ + time.strftime("%Y-%m-%d %H:%M:%S") + """
+    """OpenAPIスキーマから基本的なTypeScript型定義を生成します。"""
+    types_content = """// OpenAPIスキーマから自動生成されたTypeScript型定義
+// 生成日時: """ + time.strftime("%Y-%m-%d %H:%M:%S") + """
 
-// Base types
+// ベース型
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -131,6 +131,85 @@ export interface ApiClientConfig {
   timeout?: number;
   headers?: Record<string, string>;
 }
+
+// API エラー型
+export interface ApiError {
+  detail: string;
+  status_code?: number;
+}
+
+// fetch ベースのAPIクライアントヘルパー
+export class ApiClient {
+  private config: ApiClientConfig;
+
+  constructor(config: ApiClientConfig) {
+    this.config = config;
+  }
+
+  async request<T>(
+    endpoint: ApiEndpoint,
+    method: HttpMethod = 'GET',
+    data?: any
+  ): Promise<T> {
+    const url = `${this.config.baseUrl}${endpoint}`;
+    
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.config.headers,
+      },
+    };
+
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      options.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      let errorDetail = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorDetail = errorData.detail || errorDetail;
+      } catch (e) {
+        // JSONパースエラーの場合はデフォルトメッセージを使用
+      }
+      throw new Error(errorDetail);
+    }
+
+    return response.json();
+  }
+
+  // GET リクエスト用のヘルパーメソッド
+  async get<T>(endpoint: ApiEndpoint): Promise<T> {
+    return this.request<T>(endpoint, 'GET');
+  }
+
+  // POST リクエスト用のヘルパーメソッド
+  async post<T>(endpoint: ApiEndpoint, data: any): Promise<T> {
+    return this.request<T>(endpoint, 'POST', data);
+  }
+
+  // PUT リクエスト用のヘルパーメソッド
+  async put<T>(endpoint: ApiEndpoint, data: any): Promise<T> {
+    return this.request<T>(endpoint, 'PUT', data);
+  }
+
+  // DELETE リクエスト用のヘルパーメソッド
+  async delete<T>(endpoint: ApiEndpoint): Promise<T> {
+    return this.request<T>(endpoint, 'DELETE');
+  }
+}
+
+// デフォルトAPIクライアントの作成関数
+export function createApiClient(baseUrl: string, options?: Partial<ApiClientConfig>): ApiClient {
+  return new ApiClient({
+    baseUrl,
+    timeout: 10000,
+    ...options,
+  });
+}
 """
     
     with open(output_path, "w", encoding="utf-8") as f:
@@ -138,7 +217,7 @@ export interface ApiClientConfig {
 
 
 def convert_openapi_type_to_typescript(prop_def: dict) -> str:
-    """Convert OpenAPI property definition to TypeScript type."""
+    """OpenAPIプロパティ定義をTypeScript型に変換します。"""
     prop_type = prop_def.get("type", "any")
     prop_format = prop_def.get("format")
     
@@ -167,37 +246,38 @@ def convert_openapi_type_to_typescript(prop_def: dict) -> str:
 
 
 async def main():
-    """Main function to generate OpenAPI schema files."""
-    print("🚀 Starting FastAPI server to extract OpenAPI schema...")
+    """OpenAPIスキーマファイル生成のメイン関数。"""
+    print("🚀 OpenAPIスキーマ抽出のためにFastAPIサーバーを起動中...")
     
     # Start server temporarily
     server, thread = start_server_temporarily()
     
     try:
         # Fetch OpenAPI schema
-        print("📡 Fetching OpenAPI schema...")
+        print("📡 OpenAPIスキーマを取得中...")
         schema = await fetch_openapi_schema()
         
         # Save schema files
-        print("💾 Saving schema files...")
+        print("💾 スキーマファイルを保存中...")
         save_openapi_files(schema)
         
-        print("\n✅ Schema generation completed successfully!")
-        print("\nGenerated files:")
-        print("  - generated/openapi.json (for OpenAPI tools)")
-        print("  - generated/openapi.yaml (human-readable)")
-        print("  - generated/api-types.ts (TypeScript types)")
-        print("\nNext steps for Next.js:")
-        print("  1. Copy api-types.ts to your Next.js project")
-        print("  2. Use the types in your API calls")
-        print("  3. Import endpoints from API_ENDPOINTS constant")
+        print("\n✅ スキーマ生成が正常に完了しました！")
+        print("\n生成されたファイル:")
+        print("  - generated/openapi.json (OpenAPIツール用)")
+        print("  - generated/openapi.yaml (人間が読みやすい形式)")
+        print("  - generated/api-types.ts (TypeScript型定義)")
+        print("\nNext.jsでの次のステップ:")
+        print("  1. api-types.ts をNext.jsプロジェクトにコピー")
+        print("  2. APIコールで型を使用")
+        print("  3. API_ENDPOINTS定数からエンドポイントをインポート")
+        print("  4. fetchベースのAPIクライアントを使用（axiosではなく）")
         
     except Exception as e:
-        print(f"❌ Error generating schema: {e}")
+        print(f"❌ スキーマ生成エラー: {e}")
     
     finally:
         # Note: Server will be stopped when the script ends due to daemon thread
-        print("\n🛑 Stopping temporary server...")
+        print("\n🛑 一時サーバーを停止中...")
 
 
 if __name__ == "__main__":
