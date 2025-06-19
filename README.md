@@ -18,6 +18,71 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
 - ❤️ **ヘルスチェック**: 包括的なヘルス監視エンドポイント
 - 🔧 **YAML設定**: 設定駆動開発
 - 🌍 **CORS対応**: Next.js開発用の事前設定
+- ⚡ **APIエンドポイント自動生成**: レジストリベースの自動ルーター生成システム
+- 📄 **HTMLドキュメント生成**: 静的なSwagger UIとReDocファイルの自動生成
+
+## 🔧 APIエンドポイント自動生成システム
+
+### エンドポイント追加の流れ
+
+1. **エンドポイント設定の追加**
+   ```python
+   # app/api/endpoint_registry.py に追加
+   EndpointConfig(
+       prefix="/新しいエンドポイント",
+       tags=["タグ名"],
+       module="app.api.v1.endpoints.新しいファイル",
+       description="エンドポイントの説明",
+   ),
+   ```
+
+2. **実装ファイルの作成**
+   ```bash
+   # app/api/v1/endpoints/新しいファイル.py を作成
+   # FastAPIルーターとエンドポイントを実装
+   ```
+
+3. **自動生成の実行**
+   ```bash
+   # すべてを一括生成
+   ./scripts/generate_all.sh
+   
+   # または個別実行
+   python scripts/generate_router.py     # ルーター生成
+   python scripts/generate_docs.py       # ドキュメント生成
+   ```
+
+### 生成されるファイル
+
+| ファイル | 用途 | 格納場所 |
+|---------|------|----------|
+| `app/api/v1/__init__.py` | 自動生成されたAPIルーター | 手動管理不要 |
+| `docs/generated/openapi.json` | OpenAPIスキーマ（JSON） | 型生成用 |
+| `docs/generated/openapi.yaml` | OpenAPIスキーマ（YAML） | 人間確認用 |
+| `docs/static/swagger.html` | Swagger UI（静的HTML） | ドキュメント配布用 |
+| `docs/static/redoc.html` | ReDoc（静的HTML） | ドキュメント配布用 |
+| `generated/api-types.ts` | TypeScript型定義 | Next.js開発用 |
+
+### ディレクトリ構造
+
+```
+localllm-fastapi/
+├── app/
+│   ├── api/
+│   │   ├── endpoint_registry.py    # 📝 エンドポイント設定（手動管理）
+│   │   └── v1/
+│   │       ├── __init__.py         # 🤖 自動生成ルーター
+│   │       └── endpoints/          # 📁 エンドポイント実装
+├── scripts/
+│   ├── generate_router.py          # 🔧 ルーター生成スクリプト
+│   ├── generate_docs.py            # 📄 ドキュメント生成スクリプト
+│   └── generate_all.sh             # ⚡ 一括生成スクリプト
+├── docs/
+│   ├── generated/                  # 🤖 自動生成スキーマ
+│   └── static/                     # 📄 静的HTMLドキュメント
+└── source/
+    └── config.yaml                 # 📝 手動設定ファイル
+```
 
 ## 🚀 セットアップ
 
@@ -86,36 +151,63 @@ localllm-fastapi/
 
 ### バックエンド開発者の作業フロー
 
-1. **Pydanticモデルの定義/更新**
+1. **新しいエンドポイントの設定**
+   ```python
+   # app/api/endpoint_registry.py にエンドポイント設定を追加
+   EndpointConfig(
+       prefix="/new-feature",
+       tags=["features"],
+       module="app.api.v1.endpoints.new_feature",
+       description="新機能関連のエンドポイント",
+   ),
+   ```
+
+2. **Pydanticモデルの定義**
    ```python
    # app/models/で新しいAPIモデルを定義
    class NewFeatureRequest(BaseModel):
        name: str
        description: str
+       
+   class NewFeatureResponse(BaseModel):
+       id: int
+       name: str
+       status: str
    ```
 
-2. **APIエンドポイントの実装**
+3. **APIエンドポイントの実装**
    ```python
-   # app/api/v1/endpoints/で新しいルーターを作成
-   @router.post("/new-feature", response_model=NewFeatureResponse)
+   # app/api/v1/endpoints/new_feature.py を作成
+   from fastapi import APIRouter
+   from app.models import NewFeatureRequest, NewFeatureResponse
+   
+   router = APIRouter()
+   
+   @router.post("/create", response_model=NewFeatureResponse)
    async def create_feature(request: NewFeatureRequest):
        # ビジネスロジックの実装
+       return NewFeatureResponse(id=1, name=request.name, status="created")
    ```
 
-3. **ドキュメント・型定義の生成**
+4. **ルーター・ドキュメント・型定義の一括生成**
    ```bash
-   # 一括生成（推奨）
-   ./scripts/generate_docs.sh
-
-   # 個別生成
-   python scripts/generate_docs.py      # HTMLドキュメント
-   ./scripts/generate_types.sh          # TypeScript型定義
+   # 全自動生成（推奨）
+   ./scripts/generate_all.sh
+   
+   # または個別実行
+   python scripts/generate_router.py     # APIルーター自動生成
+   python scripts/generate_docs.py       # ドキュメント・型定義生成
    ```
 
-4. **動作確認**
+5. **動作確認**
    ```bash
    # サーバー起動
-   poetry run uvicorn main:app --reload
+   python main.py
+   
+   # エンドポイント確認
+   curl -X POST "http://localhost:8000/api/v1/new-feature/create" \
+        -H "Content-Type: application/json" \
+        -d '{"name": "テスト機能", "description": "説明"}'
    
    # ドキュメント確認
    open http://localhost:8000/docs
@@ -123,20 +215,24 @@ localllm-fastapi/
 
 ### フロントエンド開発者の作業フロー
 
-1. **生成された型定義の確認**
+1. **生成された型定義とAPIエンドポイントの確認**
    ```bash
    # バックエンド開発者が生成した型定義を確認
    cat generated/api-types.ts
+   
+   # 静的HTMLドキュメントでAPI仕様を確認
+   open docs/static/swagger.html
+   open docs/static/redoc.html
    ```
 
-2. **APIクライアントの実装**
+2. **型安全なAPIクライアントの実装**
    ```typescript
    // Next.jsアプリケーション内
    import { NewFeatureRequest, NewFeatureResponse, API_ENDPOINTS } from '@/types/api';
 
    // モダンなfetch APIを使用（axiosではなく）
    const createFeature = async (request: NewFeatureRequest): Promise<NewFeatureResponse> => {
-     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.NEW_FEATURE}`, {
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.NEW_FEATURE_CREATE}`, {
        method: 'POST',
        headers: {
          'Content-Type': 'application/json',
@@ -200,16 +296,17 @@ localllm-fastapi/
 ### チーム間の連携フロー
 
 1. **API設計の合意**
-   - バックエンド開発者がPydanticモデルでAPIスキーマを定義
-   - フロントエンド開発者が`docs/generated/openapi.yaml`を確認
+   - バックエンド開発者が`app/api/endpoint_registry.py`でエンドポイント概要を定義
+   - Pydanticモデルで詳細なAPIスキーマを定義
+   - フロントエンド開発者が`docs/generated/openapi.yaml`または静的HTMLドキュメントを確認
    - 必要に応じてSlack/GitHub等でレビュー・議論
 
-2. **型定義の共有**
+2. **自動生成と型定義の共有**
    ```bash
-   # バックエンド開発者が型定義を生成・コミット
-   ./scripts/generate_docs.sh
-   git add docs/ generated/
-   git commit -m "docs: API仕様更新 - 新機能追加"
+   # バックエンド開発者が一括生成・コミット
+   ./scripts/generate_all.sh
+   git add app/api/v1/__init__.py docs/ generated/
+   git commit -m "feat: 新機能APIエンドポイント追加"
    git push
    ```
 
@@ -218,7 +315,27 @@ localllm-fastapi/
    # フロントエンド開発者が最新の型定義を取得
    git pull
    # generated/api-types.tsを使用して型安全な開発を開始
+   # docs/static/swagger.htmlで仕様を詳細確認
    ```
+
+### 🔄 継続的な開発サイクル
+
+```mermaid
+graph LR
+    A[エンドポイント設定] --> B[実装ファイル作成]
+    B --> C[自動生成実行]
+    C --> D[型定義・ドキュメント更新]
+    D --> E[チーム共有]
+    E --> F[フロントエンド開発]
+    F --> A
+```
+
+1. `app/api/endpoint_registry.py` に設定追加
+2. `app/api/v1/endpoints/` に実装ファイル作成
+3. `./scripts/generate_all.sh` で一括生成
+4. 生成ファイルをコミット・プッシュ
+5. フロントエンド開発者が最新型定義を使用
+6. 次の機能開発へ
 
 ## 🔧 開発ツール設定
 
