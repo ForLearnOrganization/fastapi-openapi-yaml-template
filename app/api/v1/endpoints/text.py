@@ -1,4 +1,4 @@
-"""Text generation endpoints."""
+"""テキスト生成エンドポイント"""
 
 from fastapi import APIRouter, HTTPException
 from app.models import GenerateTextRequest, GenerateTextResponse
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 @router.post("/generate", response_model=GenerateTextResponse)
 async def generate_text(request: GenerateTextRequest):
     """
-    Generate text based on input prompt.
+    入力プロンプトに基づいてテキストを生成します。
     
-    This endpoint generates text using a simple rule-based approach
-    since external model access is not available.
+    外部モデルアクセスが利用できないため、このエンドポイントでは
+    シンプルなルールベースアプローチを使用してテキストを生成します。
     """
     try:
         result = await text_service.generate_text(
@@ -26,16 +26,16 @@ async def generate_text(request: GenerateTextRequest):
         )
         return result
     except Exception as e:
-        logger.error(f"Text generation failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Text generation failed: {str(e)}")
+        logger.error(f"テキスト生成に失敗しました: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}")
 
 
 @router.post("/echo", response_model=dict)
 async def echo_text(request: GenerateTextRequest):
     """
-    Echo back the input text with metadata.
+    入力テキストをメタデータ付きでエコーバックします。
     
-    Simple endpoint that returns the input with some processing information.
+    処理情報と共に入力を返すシンプルなエンドポイントです。
     """
     return {
         "original_text": request.prompt,

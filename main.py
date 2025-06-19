@@ -9,7 +9,7 @@ This application provides:
 - Client-side type generation support
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -18,10 +18,12 @@ import uvicorn
 
 from app.core.config import settings
 from app.api.v1 import api_router
+from app.models import GenerateTextRequest, GenerateTextResponse
+from app.services.text_service import TextService
 
 
 def create_custom_openapi(app: FastAPI):
-    """Create custom OpenAPI schema."""
+    """カスタムOpenAPIスキーマを作成します。"""
     if app.openapi_schema:
         return app.openapi_schema
     
@@ -32,15 +34,15 @@ def create_custom_openapi(app: FastAPI):
         routes=app.routes,
     )
     
-    # Add custom information
+    # カスタム情報を追加
     openapi_schema["info"]["x-logo"] = {
         "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
     }
     
-    # Add server information
+    # サーバー情報を追加
     openapi_schema["servers"] = [
-        {"url": "http://localhost:8000", "description": "Development server"},
-        {"url": "https://api.example.com", "description": "Production server"},
+        {"url": "http://localhost:8000", "description": "開発サーバー"},
+        {"url": "https://api.example.com", "description": "本番サーバー"},
     ]
     
     app.openapi_schema = openapi_schema
@@ -48,9 +50,9 @@ def create_custom_openapi(app: FastAPI):
 
 
 def create_application() -> FastAPI:
-    """Create and configure the FastAPI application."""
+    """FastAPIアプリケーションを作成し設定します。"""
     
-    # Create FastAPI instance
+    # FastAPIインスタンスを作成
     app = FastAPI(
         title=settings.app_name,
         version=settings.version,
@@ -61,7 +63,7 @@ def create_application() -> FastAPI:
         openapi_url="/openapi.json"
     )
     
-    # Add CORS middleware
+    # CORSミドルウェアを追加
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -70,21 +72,24 @@ def create_application() -> FastAPI:
         allow_headers=settings.cors_allow_headers,
     )
     
-    # Include API router
+    # APIルーターを含める
     app.include_router(api_router, prefix=settings.api_v1_prefix)
     
-    # Set custom OpenAPI schema
+    # カスタムOpenAPIスキーマを設定
     app.openapi = lambda: create_custom_openapi(app)
     
-    # Root endpoint
+    # テキスト生成サービスのインスタンス
+    text_service = TextService()
+    
+    # ルートエンドポイント
     @app.get("/", response_class=HTMLResponse)
     async def root():
-        """Root endpoint with API documentation links."""
+        """APIドキュメントリンク付きのルートエンドポイント。"""
         return HTMLResponse(content="""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Scalable FastAPI Application</title>
+            <title>localLLM-FastAPI</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; }
                 .container { max-width: 800px; margin: 0 auto; }
@@ -106,26 +111,26 @@ def create_application() -> FastAPI:
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🚀 Scalable FastAPI Application</h1>
-                    <p class="version">Version """ + settings.version + """</p>
+                    <h1>🚀 localLLM-FastAPI</h1>
+                    <p class="version">バージョン """ + settings.version + """</p>
                     <p>""" + settings.description + """</p>
                 </div>
                 <div class="links">
                     <a href="/docs" class="link-card">
                         <h3>📖 Swagger UI</h3>
-                        <p>Interactive API documentation</p>
+                        <p>インタラクティブAPIドキュメント</p>
                     </a>
                     <a href="/redoc" class="link-card">
                         <h3>📋 ReDoc</h3>
-                        <p>Alternative API documentation</p>
+                        <p>代替APIドキュメント</p>
                     </a>
                     <a href="/openapi.json" class="link-card">
-                        <h3>🔧 OpenAPI Schema</h3>
-                        <p>JSON schema for type generation</p>
+                        <h3>🔧 OpenAPIスキーマ</h3>
+                        <p>型生成用JSONスキーマ</p>
                     </a>
                     <a href="/api/v1/health" class="link-card">
-                        <h3>❤️ Health Check</h3>
-                        <p>Application status</p>
+                        <h3>❤️ ヘルスチェック</h3>
+                        <p>アプリケーションステータス</p>
                     </a>
                 </div>
             </div>
@@ -133,10 +138,29 @@ def create_application() -> FastAPI:
         </html>
         """)
     
+    # 元の/generateエンドポイント（後方互換性のため）
+    @app.post("/generate", response_model=GenerateTextResponse)
+    async def generate_text_legacy(request: GenerateTextRequest):
+        """
+        元の/generateエンドポイント（後方互換性のため）
+        
+        この機能は /api/v1/text/generate に移行されましたが、
+        既存のクライアントとの互換性を保つために提供されています。
+        """
+        try:
+            result = await text_service.generate_text(
+                prompt=request.prompt,
+                max_length=request.max_length or 50,
+                temperature=request.temperature or 1.0
+            )
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}")
+    
     return app
 
 
-# Create the application instance
+# アプリケーションインスタンスを作成
 app = create_application()
 
 

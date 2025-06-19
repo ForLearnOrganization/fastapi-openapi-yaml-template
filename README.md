@@ -1,150 +1,162 @@
-# 🚀 Scalable FastAPI Application
+# 🚀 localLLM-FastAPI
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.8-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg?style=flat&logo=python&logoColor=white)](https://python.org)
 [![Poetry](https://img.shields.io/badge/dependency-poetry-blue.svg?style=flat&logo=poetry&logoColor=white)](https://python-poetry.org)
 
-A production-ready, scalable FastAPI application with auto-generated documentation, type-safe API endpoints, and client-side type generation for Next.js projects.
+## 概要
 
-## ✨ Features
+FastAPI経由で、localLLMを動かします。本格的なプロダクション環境で使用可能なスケーラブルなFastAPIアプリケーションです。自動生成ドキュメント、型安全なAPIエンドポイント、Next.jsプロジェクト向けのクライアントサイド型生成機能を提供します。
 
-- 🏗️ **Modular Architecture**: Clean separation with routers, services, and models
-- 📖 **Auto-Generated Documentation**: Swagger UI and ReDoc with custom OpenAPI schema
-- 🔄 **Type Generation**: Automatic TypeScript type generation for client-side development
-- 🌐 **External API Integration**: Mock endpoints for weather, quotes, facts, and jokes
-- 🧪 **Text Generation**: Rule-based text generation service (expandable to real LLMs)
-- ❤️ **Health Checks**: Comprehensive health monitoring endpoints
-- 🔧 **YAML Configuration**: Configuration-driven development
-- 🌍 **CORS Ready**: Pre-configured for Next.js development
+## ✨ 機能
 
-## 🚀 Quick Start
+- 🏗️ **モジュラーアーキテクチャ**: ルーター、サービス、モデルのクリーンな分離
+- 📖 **自動生成ドキュメント**: カスタムOpenAPIスキーマを使ったSwagger UIとReDoc
+- 🔄 **型生成**: クライアントサイド開発用の自動TypeScript型生成
+- 🌐 **外部API統合**: 天気、名言、豆知識、ジョークのモックエンドポイント
+- 🧪 **テキスト生成**: ルールベースのテキスト生成サービス（実際のLLMに拡張可能）
+- ❤️ **ヘルスチェック**: 包括的なヘルス監視エンドポイント
+- 🔧 **YAML設定**: 設定駆動開発
+- 🌍 **CORS対応**: Next.js開発用の事前設定
 
-### Prerequisites
+## 🚀 セットアップ
+
+### 前提条件
 
 - Python 3.9+
-- Poetry (for dependency management)
+- Poetry（依存関係管理用）
 
-### Installation
+### インストール
 
-1. **Clone the repository**
+1. **リポジトリのクローン**
    ```bash
    git clone https://github.com/ForLearnOrganization/localllm-fastapi.git
    cd localllm-fastapi
    ```
 
-2. **Install dependencies with Poetry**
+2. **Poetry の依存パッケージをインストール**
    ```bash
    poetry install
    ```
 
-3. **Start the development server**
+3. **APIサーバの起動**
    ```bash
    poetry run uvicorn main:app --reload
    ```
 
-4. **Access the application**
-   - **API Documentation**: http://localhost:8000/docs
-   - **Alternative Docs**: http://localhost:8000/redoc
-   - **Root Page**: http://localhost:8000/
-   - **Health Check**: http://localhost:8000/api/v1/health/
+4. **アプリケーションへのアクセス**
+   - **APIドキュメント**: http://localhost:8000/docs
+   - **代替ドキュメント**: http://localhost:8000/redoc
+   - **ルートページ**: http://localhost:8000/
+   - **ヘルスチェック**: http://localhost:8000/api/v1/health/
 
-## 📁 Project Structure
+## 📁 プロジェクト構造
 
 ```
 localllm-fastapi/
 ├── app/
 │   ├── api/v1/
 │   │   ├── endpoints/
-│   │   │   ├── health.py        # Health check endpoints
-│   │   │   ├── text.py          # Text generation endpoints
-│   │   │   └── external.py      # External API endpoints
-│   │   └── __init__.py          # API router configuration
+│   │   │   ├── health.py        # ヘルスチェックエンドポイント
+│   │   │   ├── text.py          # テキスト生成エンドポイント
+│   │   │   └── external.py      # 外部APIエンドポイント
+│   │   └── __init__.py          # APIルーター設定
 │   ├── core/
-│   │   └── config.py            # Application settings
+│   │   └── config.py            # アプリケーション設定
 │   ├── models/
-│   │   └── __init__.py          # Pydantic models and schemas
+│   │   └── __init__.py          # Pydanticモデルとスキーマ
 │   ├── services/
-│   │   ├── text_service.py      # Text generation service
-│   │   └── external_service.py  # External API service
+│   │   ├── text_service.py      # テキスト生成サービス
+│   │   └── external_service.py  # 外部APIサービス
 │   └── utils/
-│       └── openapi.py           # OpenAPI utilities
+│       └── openapi.py           # OpenAPIユーティリティ
 ├── scripts/
-│   ├── generate_client_types.py # Python script for type generation
-│   └── generate_types.sh        # Shell script for type generation
-├── generated/                   # Auto-generated files (created on first run)
+│   ├── generate_client_types.py # 型生成用Pythonスクリプト
+│   └── generate_types.sh        # 型生成用シェルスクリプト
+├── generated/                   # 自動生成ファイル（初回実行時に作成）
 │   ├── openapi.json
 │   ├── openapi.yaml
 │   └── api-types.ts
-├── config.yaml                 # Configuration file
-├── main.py                     # Application entry point
-└── pyproject.toml              # Poetry configuration
+├── config.yaml                 # 設定ファイル
+├── main.py                     # アプリケーションエントリーポイント
+└── pyproject.toml              # Poetry設定
 ```
 
-## 🔧 API Endpoints
+## 🔧 APIエンドポイント
 
-### Health Endpoints
-- `GET /api/v1/health/` - Basic health check
-- `GET /api/v1/health/detailed` - Detailed health information
+### ヘルスエンドポイント
+- `GET /api/v1/health/` - 基本的なヘルスチェック
+- `GET /api/v1/health/detailed` - 詳細なヘルス情報
 
-### Text Generation
-- `POST /api/v1/text/generate` - Generate text from prompt
-- `POST /api/v1/text/echo` - Echo text with metadata
+### テキスト生成
+- `POST /api/v1/text/generate` - プロンプトからテキスト生成
+- `POST /api/v1/text/echo` - メタデータ付きテキストエコー
 
-### External APIs (Mock Data)
-- `POST /api/v1/external/weather` - Get weather information
-- `GET /api/v1/external/quote` - Get random quote
-- `GET /api/v1/external/fact` - Get random fact
-- `GET /api/v1/external/joke` - Get programming joke
+### 外部API（モックデータ）
+- `POST /api/v1/external/weather` - 天気情報取得
+- `GET /api/v1/external/quote` - ランダムな名言取得
+- `GET /api/v1/external/fact` - ランダムな豆知識取得
+- `GET /api/v1/external/joke` - プログラミングジョーク取得
 
-## 🎯 Usage Examples
+### 互換性エンドポイント
+- `POST /generate` - 元の`/generate`エンドポイントとの後方互換性
 
-### Text Generation
+## 🎯 使用例
+
+### テキスト生成（新しいエンドポイント）
 ```bash
 curl -X POST "http://localhost:8000/api/v1/text/generate" \
      -H "Content-Type: application/json" \
      -d '{"prompt": "Hello world", "max_length": 100}'
 ```
 
-### Weather API
+### テキスト生成（元の互換エンドポイント）
+```bash
+curl -X POST "http://localhost:8000/generate" \
+     -H "Content-Type: application/json" \
+     -d '{"prompt": "百人一首っぽい言葉を並べて。"}'
+```
+
+### 天気API
 ```bash
 curl -X POST "http://localhost:8000/api/v1/external/weather" \
      -H "Content-Type: application/json" \
      -d '{"city": "Tokyo", "country_code": "JP"}'
 ```
 
-### Random Quote
+### ランダムな名言
 ```bash
 curl -X GET "http://localhost:8000/api/v1/external/quote"
 ```
 
-## 📦 Client-Side Type Generation
+## 📦 クライアントサイド型生成
 
-Generate TypeScript types for your Next.js project:
+Next.jsプロジェクト用のTypeScript型を生成：
 
-### Using the Shell Script (Recommended)
+### シェルスクリプトを使用（推奨）
 ```bash
-# Generate all types and schemas
+# すべての型とスキーマを生成
 ./scripts/generate_types.sh
 ```
 
-### Using the Python Script
+### Pythonスクリプトを使用
 ```bash
 poetry run python scripts/generate_client_types.py
 ```
 
-### Next.js Integration
+### Next.js統合
 
-1. **Copy the generated types**
+1. **生成された型をコピー**
    ```bash
    cp generated/api-types.ts your-nextjs-project/types/api.ts
    ```
 
-2. **Install HTTP client** (e.g., axios)
+2. **HTTPクライアントをインストール**（例：axios）
    ```bash
    npm install axios
    ```
 
-3. **Use in your Next.js components**
+3. **Next.jsコンポーネントで使用**
    ```typescript
    import { WeatherRequest, WeatherResponse, API_ENDPOINTS } from './types/api';
    import axios from 'axios';
@@ -158,19 +170,19 @@ poetry run python scripts/generate_client_types.py
    };
    ```
 
-4. **Set environment variable**
+4. **環境変数を設定**
    ```bash
    # .env.local
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
 
-## ⚙️ Configuration
+## ⚙️ 設定
 
-The application uses YAML-based configuration. Edit `config.yaml` to customize:
+アプリケーションはYAMLベースの設定を使用します。`config.yaml`を編集してカスタマイズ：
 
 ```yaml
 app:
-  name: "Your App Name"
+  name: "localLLM-FastAPI"
   version: "1.0.0"
   debug: true
 
@@ -188,32 +200,32 @@ external_apis:
     api_key: "your-api-key"
 ```
 
-## 🧪 Development
+## 🧪 開発
 
-### Running Tests
+### テストの実行
 ```bash
 poetry run pytest
 ```
 
-### Code Formatting
+### コードフォーマット
 ```bash
 poetry run black .
 poetry run isort .
 ```
 
-### Type Checking
+### 型チェック
 ```bash
 poetry run mypy .
 ```
 
-### Adding New Endpoints
+### 新しいエンドポイントの追加
 
-1. **Create endpoint file** in `app/api/v1/endpoints/`
-2. **Define Pydantic models** in `app/models/__init__.py`
-3. **Implement business logic** in `app/services/`
-4. **Register router** in `app/api/v1/__init__.py`
+1. **エンドポイントファイルを作成** `app/api/v1/endpoints/`内に
+2. **Pydanticモデルを定義** `app/models/__init__.py`内に
+3. **ビジネスロジックを実装** `app/services/`内に
+4. **ルーターを登録** `app/api/v1/__init__.py`内に
 
-Example new endpoint:
+新しいエンドポイントの例：
 ```python
 # app/api/v1/endpoints/new_feature.py
 from fastapi import APIRouter
@@ -223,22 +235,23 @@ router = APIRouter()
 
 @router.post("/new-endpoint", response_model=NewFeatureResponse)
 async def new_endpoint(request: NewFeatureRequest):
-    # Implementation here
+    """新機能のエンドポイント"""
+    # 実装をここに
     pass
 ```
 
-## 🌐 Deployment
+## 🌐 デプロイメント
 
-### Production Setup
+### 本番環境セットアップ
 ```bash
-# Install production dependencies
+# 本番用依存関係をインストール
 poetry install --no-dev
 
-# Run with Gunicorn
+# Gunicornで実行
 poetry run gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
-### Docker (Optional)
+### Docker（オプション）
 ```dockerfile
 FROM python:3.9
 WORKDIR /app
@@ -248,25 +261,51 @@ COPY . .
 CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-## 🤝 Contributing
+## その他の便利なコマンド
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Run the linters and tests
-6. Submit a pull request
+- **依存関係の追加**
+  新たなパッケージを追加する場合：
+  ```bash
+  poetry add <package_name>
+  ```
 
-## 📄 License
+- **依存関係の更新**
+  すべての依存関係を更新：
+  ```bash
+  poetry update
+  ```
 
-This project is licensed under the MIT License.
+- **仮想環境の確認**
+  Poetry管理下の仮想環境情報を確認：
+  ```bash
+  poetry env info
+  ```
 
-## 🔗 Links
+- **Poetry シェルに入る**
+  Poetry管理の仮想環境内で作業：
+  ```bash
+  poetry shell
+  ```
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
-- [Poetry Documentation](https://python-poetry.org/docs/)
+## 🤝 コントリビューション
+
+1. リポジトリをフォーク
+2. フィーチャーブランチを作成
+3. 変更を加える
+4. 該当する場合はテストを追加
+5. リンターとテストを実行
+6. プルリクエストを送信
+
+## 📄 ライセンス
+
+このプロジェクトはMITライセンスの下でライセンスされています。
+
+## 🔗 リンク
+
+- [FastAPI ドキュメント](https://fastapi.tiangolo.com/)
+- [Pydantic ドキュメント](https://pydantic-docs.helpmanual.io/)
+- [Poetry ドキュメント](https://python-poetry.org/docs/)
 
 ---
 
-Built with ❤️ using FastAPI and modern Python development practices.
+❤️ FastAPIとモダンなPython開発プラクティスで構築

@@ -1,4 +1,4 @@
-"""Health check endpoints."""
+"""ヘルスチェックエンドポイント"""
 
 from fastapi import APIRouter
 from datetime import datetime
@@ -11,9 +11,9 @@ router = APIRouter()
 @router.get("/", response_model=HealthResponse)
 async def health_check():
     """
-    Health check endpoint.
+    ヘルスチェックエンドポイント
     
-    Returns the current status of the application.
+    アプリケーションの現在の状態を返します。
     """
     return HealthResponse(
         status="healthy",
@@ -25,9 +25,9 @@ async def health_check():
 @router.get("/detailed", response_model=dict)
 async def detailed_health_check():
     """
-    Detailed health check endpoint.
+    詳細ヘルスチェックエンドポイント
     
-    Returns detailed information about the application status.
+    アプリケーションの状態に関する詳細情報を返します。
     """
     return {
         "status": "healthy",
@@ -36,5 +36,5 @@ async def detailed_health_check():
         "app_name": settings.app_name,
         "description": settings.description,
         "debug_mode": settings.debug,
-        "uptime": "Available since startup"
+        "uptime": "起動時より利用可能"
     }
