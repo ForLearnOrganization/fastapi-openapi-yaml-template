@@ -1,5 +1,5 @@
 // Auto-generated TypeScript types from OpenAPI schema
-// Generated at: 2025-06-19 02:42:39
+// Generated at: 2025-06-19 03:55:26
 
 // Base types
 export interface ApiResponse<T> {
@@ -86,7 +86,7 @@ export interface WeatherResponse {
 
 // API endpoint paths
 export const API_ENDPOINTS = {
-  HEALTH: '/api/v1/health',
+  HEALTH: '/api/v1/health/',
   HEALTH_DETAILED: '/api/v1/health/detailed',
   TEXT_GENERATE: '/api/v1/text/generate',
   TEXT_ECHO: '/api/v1/text/echo',
@@ -94,6 +94,7 @@ export const API_ENDPOINTS = {
   EXTERNAL_QUOTE: '/api/v1/external/quote',
   EXTERNAL_FACT: '/api/v1/external/fact',
   EXTERNAL_JOKE: '/api/v1/external/joke',
+  LEGACY_GENERATE: '/generate',
 } as const;
 
 // Request/Response helper types

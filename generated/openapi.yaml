@@ -60,6 +60,7 @@ components:
           title: Input Prompt
           type: string
         metadata:
+          additionalProperties: true
           description: Additional metadata
           title: Metadata
           type: object
@@ -212,7 +213,7 @@ openapi: 3.1.0
 paths:
   /:
     get:
-      description: Root endpoint with API documentation links.
+      description: APIドキュメントリンク付きのルートエンドポイント。
       operationId: root__get
       responses:
         '200':
@@ -224,10 +225,10 @@ paths:
       summary: Root
   /api/v1/external/fact:
     get:
-      description: 'Get a random interesting fact.
+      description: 'ランダムな興味深い豆知識を取得します。
 
 
-        Returns a random educational fact.'
+        ランダムな教育的事実を返します。'
       operationId: get_random_fact_api_v1_external_fact_get
       responses:
         '200':
@@ -241,16 +242,17 @@ paths:
       - external
   /api/v1/external/joke:
     get:
-      description: 'Get a random programming joke.
+      description: 'ランダムなプログラミングジョークを取得します。
 
 
-        Returns a random programming-related joke.'
+        ランダムなプログラミング関連のジョークを返します。'
       operationId: get_random_joke_api_v1_external_joke_get
       responses:
         '200':
           content:
             application/json:
               schema:
+                additionalProperties: true
                 title: Response Get Random Joke Api V1 External Joke Get
                 type: object
           description: Successful Response
@@ -259,10 +261,10 @@ paths:
       - external
   /api/v1/external/quote:
     get:
-      description: 'Get a random inspirational quote.
+      description: 'ランダムな名言を取得します。
 
 
-        Returns a random quote from a curated collection.'
+        厳選されたコレクションからランダムな名言を返します。'
       operationId: get_random_quote_api_v1_external_quote_get
       responses:
         '200':
@@ -276,9 +278,12 @@ paths:
       - external
   /api/v1/external/weather:
     post:
-      description: "Get weather information for a city.\n\nThis endpoint provides\
-        \ mock weather data since external API access \nmay be limited in the current\
-        \ environment."
+      description: '都市の天気情報を取得します。
+
+
+        現在の環境では外部APIアクセスが制限される可能性があるため、
+
+        このエンドポイントはモック天気データを提供します。'
       operationId: get_weather_api_v1_external_weather_post
       requestBody:
         content:
@@ -304,10 +309,10 @@ paths:
       - external
   /api/v1/health/:
     get:
-      description: 'Health check endpoint.
+      description: 'ヘルスチェックエンドポイント
 
 
-        Returns the current status of the application.'
+        アプリケーションの現在の状態を返します。'
       operationId: health_check_api_v1_health__get
       responses:
         '200':
@@ -321,16 +326,17 @@ paths:
       - health
   /api/v1/health/detailed:
     get:
-      description: 'Detailed health check endpoint.
+      description: '詳細ヘルスチェックエンドポイント
 
 
-        Returns detailed information about the application status.'
+        アプリケーションの状態に関する詳細情報を返します。'
       operationId: detailed_health_check_api_v1_health_detailed_get
       responses:
         '200':
           content:
             application/json:
               schema:
+                additionalProperties: true
                 title: Response Detailed Health Check Api V1 Health Detailed Get
                 type: object
           description: Successful Response
@@ -339,10 +345,10 @@ paths:
       - health
   /api/v1/text/echo:
     post:
-      description: 'Echo back the input text with metadata.
+      description: '入力テキストをメタデータ付きでエコーバックします。
 
 
-        Simple endpoint that returns the input with some processing information.'
+        処理情報と共に入力を返すシンプルなエンドポイントです。'
       operationId: echo_text_api_v1_text_echo_post
       requestBody:
         content:
@@ -355,6 +361,7 @@ paths:
           content:
             application/json:
               schema:
+                additionalProperties: true
                 title: Response Echo Text Api V1 Text Echo Post
                 type: object
           description: Successful Response
@@ -369,12 +376,12 @@ paths:
       - text
   /api/v1/text/generate:
     post:
-      description: 'Generate text based on input prompt.
+      description: '入力プロンプトに基づいてテキストを生成します。
 
 
-        This endpoint generates text using a simple rule-based approach
+        外部モデルアクセスが利用できないため、このエンドポイントでは
 
-        since external model access is not available.'
+        シンプルなルールベースアプローチを使用してテキストを生成します。'
       operationId: generate_text_api_v1_text_generate_post
       requestBody:
         content:
@@ -398,8 +405,37 @@ paths:
       summary: Generate Text
       tags:
       - text
+  /generate:
+    post:
+      description: '元の/generateエンドポイント（後方互換性のため）
+
+
+        この機能は /api/v1/text/generate に移行されましたが、
+
+        既存のクライアントとの互換性を保つために提供されています。'
+      operationId: generate_text_legacy_generate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateTextRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateTextResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Generate Text Legacy
 servers:
-- description: Development server
+- description: 開発サーバー
   url: http://localhost:8000
-- description: Production server
+- description: 本番サーバー
   url: https://api.example.com

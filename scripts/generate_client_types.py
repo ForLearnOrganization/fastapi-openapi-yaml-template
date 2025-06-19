@@ -18,7 +18,7 @@ from pathlib import Path
 
 def start_server_temporarily():
     """Start the server in a separate thread."""
-    config = uvicorn.Config("app:app", host="127.0.0.1", port=8001, log_level="error")
+    config = uvicorn.Config("main:app", host="127.0.0.1", port=8001, log_level="error")
     server = uvicorn.Server(config)
     
     def run_server():
