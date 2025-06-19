@@ -1,0 +1,405 @@
+components:
+  schemas:
+    FactResponse:
+      description: Random fact response model.
+      properties:
+        fact:
+          description: Interesting fact
+          title: Fact
+          type: string
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Fact source
+          title: Source
+      required:
+      - fact
+      title: FactResponse
+      type: object
+    GenerateTextRequest:
+      description: Text generation request model.
+      properties:
+        max_length:
+          anyOf:
+          - maximum: 500.0
+            minimum: 1.0
+            type: integer
+          - type: 'null'
+          default: 50
+          description: Maximum length of generated text
+          title: Max Length
+        prompt:
+          description: Text prompt for generation
+          maxLength: 1000
+          minLength: 1
+          title: Prompt
+          type: string
+        temperature:
+          anyOf:
+          - maximum: 2.0
+            minimum: 0.1
+            type: number
+          - type: 'null'
+          default: 1.0
+          description: Temperature for text generation
+          title: Temperature
+      required:
+      - prompt
+      title: GenerateTextRequest
+      type: object
+    GenerateTextResponse:
+      description: Text generation response model.
+      properties:
+        generated_text:
+          description: Generated text
+          title: Generated Text
+          type: string
+        input_prompt:
+          description: Original input prompt
+          title: Input Prompt
+          type: string
+        metadata:
+          description: Additional metadata
+          title: Metadata
+          type: object
+      required:
+      - generated_text
+      - input_prompt
+      title: GenerateTextResponse
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    HealthResponse:
+      description: Health check response model.
+      properties:
+        status:
+          description: Application status
+          title: Status
+          type: string
+        timestamp:
+          description: Timestamp of the health check
+          format: date-time
+          title: Timestamp
+          type: string
+        version:
+          description: Application version
+          title: Version
+          type: string
+      required:
+      - status
+      - timestamp
+      - version
+      title: HealthResponse
+      type: object
+    QuoteResponse:
+      description: Random quote response model.
+      properties:
+        author:
+          description: Quote author
+          title: Author
+          type: string
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Quote category
+          title: Category
+        quote:
+          description: Quote text
+          title: Quote
+          type: string
+      required:
+      - quote
+      - author
+      title: QuoteResponse
+      type: object
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+    WeatherRequest:
+      description: Weather request model.
+      properties:
+        city:
+          description: City name
+          maxLength: 100
+          minLength: 1
+          title: City
+          type: string
+        country_code:
+          anyOf:
+          - maxLength: 2
+            minLength: 2
+            type: string
+          - type: 'null'
+          description: ISO 3166 country code
+          title: Country Code
+      required:
+      - city
+      title: WeatherRequest
+      type: object
+    WeatherResponse:
+      description: Weather response model.
+      properties:
+        city:
+          description: City name
+          title: City
+          type: string
+        country:
+          description: Country name
+          title: Country
+          type: string
+        description:
+          description: Weather description
+          title: Description
+          type: string
+        humidity:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: Humidity percentage
+          title: Humidity
+        temperature:
+          description: Temperature in Celsius
+          title: Temperature
+          type: number
+        wind_speed:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Wind speed in m/s
+          title: Wind Speed
+      required:
+      - city
+      - country
+      - temperature
+      - description
+      title: WeatherResponse
+      type: object
+info:
+  description: A scalable FastAPI application with auto-generated documentation and
+    client type generation
+  title: Scalable FastAPI Application
+  version: 1.0.0
+  x-logo:
+    url: https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png
+openapi: 3.1.0
+paths:
+  /:
+    get:
+      description: Root endpoint with API documentation links.
+      operationId: root__get
+      responses:
+        '200':
+          content:
+            text/html:
+              schema:
+                type: string
+          description: Successful Response
+      summary: Root
+  /api/v1/external/fact:
+    get:
+      description: 'Get a random interesting fact.
+
+
+        Returns a random educational fact.'
+      operationId: get_random_fact_api_v1_external_fact_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FactResponse'
+          description: Successful Response
+      summary: Get Random Fact
+      tags:
+      - external
+  /api/v1/external/joke:
+    get:
+      description: 'Get a random programming joke.
+
+
+        Returns a random programming-related joke.'
+      operationId: get_random_joke_api_v1_external_joke_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: Response Get Random Joke Api V1 External Joke Get
+                type: object
+          description: Successful Response
+      summary: Get Random Joke
+      tags:
+      - external
+  /api/v1/external/quote:
+    get:
+      description: 'Get a random inspirational quote.
+
+
+        Returns a random quote from a curated collection.'
+      operationId: get_random_quote_api_v1_external_quote_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+          description: Successful Response
+      summary: Get Random Quote
+      tags:
+      - external
+  /api/v1/external/weather:
+    post:
+      description: "Get weather information for a city.\n\nThis endpoint provides\
+        \ mock weather data since external API access \nmay be limited in the current\
+        \ environment."
+      operationId: get_weather_api_v1_external_weather_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeatherRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Weather
+      tags:
+      - external
+  /api/v1/health/:
+    get:
+      description: 'Health check endpoint.
+
+
+        Returns the current status of the application.'
+      operationId: health_check_api_v1_health__get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+          description: Successful Response
+      summary: Health Check
+      tags:
+      - health
+  /api/v1/health/detailed:
+    get:
+      description: 'Detailed health check endpoint.
+
+
+        Returns detailed information about the application status.'
+      operationId: detailed_health_check_api_v1_health_detailed_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: Response Detailed Health Check Api V1 Health Detailed Get
+                type: object
+          description: Successful Response
+      summary: Detailed Health Check
+      tags:
+      - health
+  /api/v1/text/echo:
+    post:
+      description: 'Echo back the input text with metadata.
+
+
+        Simple endpoint that returns the input with some processing information.'
+      operationId: echo_text_api_v1_text_echo_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateTextRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: Response Echo Text Api V1 Text Echo Post
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Echo Text
+      tags:
+      - text
+  /api/v1/text/generate:
+    post:
+      description: 'Generate text based on input prompt.
+
+
+        This endpoint generates text using a simple rule-based approach
+
+        since external model access is not available.'
+      operationId: generate_text_api_v1_text_generate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateTextRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateTextResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Generate Text
+      tags:
+      - text
+servers:
+- description: Development server
+  url: http://localhost:8000
+- description: Production server
+  url: https://api.example.com

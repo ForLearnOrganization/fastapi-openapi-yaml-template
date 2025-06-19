@@ -1,0 +1,63 @@
+# Configuration file for the FastAPI application
+# This file demonstrates YAML-based configuration and type generation
+
+app:
+  name: "Scalable FastAPI Application"
+  version: "1.0.0"
+  description: "A scalable FastAPI application with auto-generated documentation and client type generation"
+  debug: true
+
+api:
+  v1_prefix: "/api/v1"
+  allowed_hosts:
+    - "*"
+
+cors:
+  origins:
+    - "http://localhost:3000"
+    - "http://localhost:8000"
+    - "http://127.0.0.1:3000"
+    - "http://127.0.0.1:8000"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+external_apis:
+  # Configuration for external API services
+  weather:
+    mock_mode: true
+    api_key: ""  # Set in environment or .env file
+    base_url: "https://api.openweathermap.org/data/2.5"
+  
+  quotes:
+    mock_mode: true
+    base_url: "https://api.quotable.io"
+  
+  facts:
+    mock_mode: true
+    base_url: "https://uselessfacts.jsph.pl"
+
+generation:
+  # Settings for code generation
+  typescript:
+    output_directory: "generated"
+    include_client_helpers: true
+    use_interfaces: true
+  
+  schemas:
+    export_json: true
+    export_yaml: true
+    export_typescript: true
+
+features:
+  # Feature flags
+  text_generation: true
+  external_apis: true
+  health_checks: true
+  metrics: false  # Could be enabled for production
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

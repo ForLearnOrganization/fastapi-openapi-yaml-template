@@ -1,0 +1,580 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Scalable FastAPI Application",
+    "description": "A scalable FastAPI application with auto-generated documentation and client type generation",
+    "version": "1.0.0",
+    "x-logo": {
+      "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
+    }
+  },
+  "paths": {
+    "/api/v1/health/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint.\n\nReturns the current status of the application.",
+        "operationId": "health_check_api_v1_health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/detailed": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Detailed Health Check",
+        "description": "Detailed health check endpoint.\n\nReturns detailed information about the application status.",
+        "operationId": "detailed_health_check_api_v1_health_detailed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Detailed Health Check Api V1 Health Detailed Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/text/generate": {
+      "post": {
+        "tags": [
+          "text"
+        ],
+        "summary": "Generate Text",
+        "description": "Generate text based on input prompt.\n\nThis endpoint generates text using a simple rule-based approach\nsince external model access is not available.",
+        "operationId": "generate_text_api_v1_text_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateTextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/text/echo": {
+      "post": {
+        "tags": [
+          "text"
+        ],
+        "summary": "Echo Text",
+        "description": "Echo back the input text with metadata.\n\nSimple endpoint that returns the input with some processing information.",
+        "operationId": "echo_text_api_v1_text_echo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Echo Text Api V1 Text Echo Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/weather": {
+      "post": {
+        "tags": [
+          "external"
+        ],
+        "summary": "Get Weather",
+        "description": "Get weather information for a city.\n\nThis endpoint provides mock weather data since external API access \nmay be limited in the current environment.",
+        "operationId": "get_weather_api_v1_external_weather_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/quote": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "Get Random Quote",
+        "description": "Get a random inspirational quote.\n\nReturns a random quote from a curated collection.",
+        "operationId": "get_random_quote_api_v1_external_quote_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/fact": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "Get Random Fact",
+        "description": "Get a random interesting fact.\n\nReturns a random educational fact.",
+        "operationId": "get_random_fact_api_v1_external_fact_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/joke": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "Get Random Joke",
+        "description": "Get a random programming joke.\n\nReturns a random programming-related joke.",
+        "operationId": "get_random_joke_api_v1_external_joke_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Random Joke Api V1 External Joke Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint with API documentation links.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FactResponse": {
+        "properties": {
+          "fact": {
+            "type": "string",
+            "title": "Fact",
+            "description": "Interesting fact"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "Fact source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fact"
+        ],
+        "title": "FactResponse",
+        "description": "Random fact response model."
+      },
+      "GenerateTextRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Prompt",
+            "description": "Text prompt for generation"
+          },
+          "max_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Length",
+            "description": "Maximum length of generated text",
+            "default": 50
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature",
+            "description": "Temperature for text generation",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "GenerateTextRequest",
+        "description": "Text generation request model."
+      },
+      "GenerateTextResponse": {
+        "properties": {
+          "generated_text": {
+            "type": "string",
+            "title": "Generated Text",
+            "description": "Generated text"
+          },
+          "input_prompt": {
+            "type": "string",
+            "title": "Input Prompt",
+            "description": "Original input prompt"
+          },
+          "metadata": {
+            "type": "object",
+            "title": "Metadata",
+            "description": "Additional metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_text",
+          "input_prompt"
+        ],
+        "title": "GenerateTextResponse",
+        "description": "Text generation response model."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Application status"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp of the health check"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Application version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "timestamp",
+          "version"
+        ],
+        "title": "HealthResponse",
+        "description": "Health check response model."
+      },
+      "QuoteResponse": {
+        "properties": {
+          "quote": {
+            "type": "string",
+            "title": "Quote",
+            "description": "Quote text"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author",
+            "description": "Quote author"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "description": "Quote category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quote",
+          "author"
+        ],
+        "title": "QuoteResponse",
+        "description": "Random quote response model."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeatherRequest": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "City",
+            "description": "City name"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code",
+            "description": "ISO 3166 country code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "city"
+        ],
+        "title": "WeatherRequest",
+        "description": "Weather request model."
+      },
+      "WeatherResponse": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "title": "City",
+            "description": "City name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "description": "Country name"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "description": "Temperature in Celsius"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Weather description"
+          },
+          "humidity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humidity",
+            "description": "Humidity percentage"
+          },
+          "wind_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed",
+            "description": "Wind speed in m/s"
+          }
+        },
+        "type": "object",
+        "required": [
+          "city",
+          "country",
+          "temperature",
+          "description"
+        ],
+        "title": "WeatherResponse",
+        "description": "Weather response model."
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    }
+  ]
+}
