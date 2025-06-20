@@ -86,18 +86,27 @@ class ExternalAPIService:
                 "source": "zoology",
             },
             {
-                "fact": "The Great Wall of China isn't visible from space with the naked eye.",
+                "fact": (
+                    "The Great Wall of China isn't visible from space "
+                    "with the naked eye."
+                ),
                 "source": "geography",
             },
         ]
 
         self.mock_jokes = [
             {
-                "joke": "Why do programmers prefer dark mode? Because light attracts bugs!",
+                "joke": (
+                    "Why do programmers prefer dark mode? "
+                    "Because light attracts bugs!"
+                ),
                 "category": "programming",
             },
             {
-                "joke": "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
+                "joke": (
+                    "How many programmers does it take to change a light bulb? "
+                    "None, that's a hardware problem."
+                ),
                 "category": "programming",
             },
             {
@@ -109,7 +118,10 @@ class ExternalAPIService:
                 "category": "programming",
             },
             {
-                "joke": "Why do Python programmers prefer snakes? Because they're easy to wrap around your finger!",
+                "joke": (
+                    "Why do Python programmers prefer snakes? "
+                    "Because they're easy to wrap around your finger!"
+                ),
                 "category": "programming",
             },
         ]

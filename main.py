@@ -94,7 +94,12 @@ def create_application() -> FastAPI:
                 body { font-family: Arial, sans-serif; margin: 40px; }
                 .container { max-width: 800px; margin: 0 auto; }
                 .header { text-align: center; margin-bottom: 40px; }
-                .links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+                .links {
+                    display: flex;
+                    gap: 20px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
                 .link-card {
                     background: #f0f0f0;
                     padding: 20px;

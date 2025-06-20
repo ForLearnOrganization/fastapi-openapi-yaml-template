@@ -36,6 +36,16 @@ select = [
 ]
 ignore = ["B904"]  # Ignore the except clause issue for now
 
+# 生成されたファイル用の特別なルール
+[tool.ruff.lint.per-file-ignores]
+"app/generated/*.py" = [
+    "F403",  # 生成ファイルではstar importを許可
+    "F405",  # star importからの未定義名を許可
+]
+"scripts/*.py" = [
+    "E501",  # スクリプトファイルでは長い行を許可
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

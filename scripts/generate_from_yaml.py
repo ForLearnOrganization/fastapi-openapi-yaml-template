@@ -6,6 +6,7 @@ OpenAPI YAML ファーストアプローチ用のコード生成スクリプト
 """
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,27 @@ def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
     with open(yaml_path, encoding='utf-8') as f:
         return yaml.safe_load(f)
+
+
+def format_generated_files(output_dir: Path) -> None:
+    """生成されたPythonファイルをruffでフォーマットします。"""
+    try:
+        python_files = list(output_dir.glob("*.py"))
+        if python_files:
+            print("🎨 生成されたファイルをフォーマット中...")
+            # まずフォーマットのみ実行（エラーがあってもフォーマットは可能）
+            subprocess.run([
+                "poetry", "run", "ruff", "format", *[str(f) for f in python_files]
+            ], check=True, cwd=output_dir.parent)
+            # 次に修正可能なエラーをfix（失敗しても継続）
+            subprocess.run([
+                "poetry", "run", "ruff", "check", "--fix", *[str(f) for f in python_files]
+            ], cwd=output_dir.parent)
+            print("✨ フォーマット完了")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
+    except FileNotFoundError:
+        print("⚠️  ruffが見つかりません。手動でフォーマットしてください")
 
 
 def generate_pydantic_models(spec: dict[str, Any], output_dir: str) -> None:
@@ -32,9 +54,9 @@ OpenAPI YAML仕様から自動生成されたPydanticモデル
 \"\"\"
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
-from enum import Enum
 
 
 """
@@ -104,7 +126,12 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
             field_params.append(f'max_length={prop_def["maxLength"]}')
 
         if field_params:
-            field_def = f' = Field({", ".join(field_params)})'
+            # 長い行を避けるため、パラメータが多い場合は複数行に分割
+            params_str = ", ".join(field_params)
+            if len(f'    {prop_name}: {field_type} = Field({params_str})') > 80:
+                field_def = f' = Field(\n        {",\n        ".join(field_params)}\n    )'
+            else:
+                field_def = f' = Field({params_str})'
 
         class_def += f'    {prop_name}: {field_type}{field_def}\n'
 
@@ -128,9 +155,9 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
         return 'bool'
     elif prop_type == 'array':
         item_type = convert_openapi_type_to_python(prop_def.get('items', {}))
-        return f'List[{item_type}]'
+        return f'list[{item_type}]'
     elif prop_type == 'object':
-        return 'Dict[str, Any]'
+        return 'dict[str, Any]'
     else:
         # $refの処理
         ref = prop_def.get('$ref')
@@ -283,6 +310,9 @@ def main():
 
         # ルーター生成
         generate_router_stubs(spec, str(output_dir))
+
+        # 生成されたファイルをフォーマット
+        format_generated_files(output_dir)
 
         print("✅ コード生成が完了しました！")
         print()

@@ -7,6 +7,7 @@ Next.jsプロジェクトでの使用に最適化されています。
 """
 
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -19,6 +20,25 @@ def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
     with open(yaml_path, encoding='utf-8') as f:
         return yaml.safe_load(f)
+
+
+def format_generated_python_files() -> None:
+    """必要に応じて生成されたPythonファイルをフォーマットします。"""
+    try:
+        # app/generated ディレクトリにPythonファイルがあるかチェック
+        generated_dir = Path("app/generated")
+        if generated_dir.exists():
+            python_files = list(generated_dir.glob("*.py"))
+            if python_files:
+                print("🎨 生成されたPythonファイルをフォーマット中...")
+                subprocess.run([
+                    "poetry", "run", "ruff", "format", *[str(f) for f in python_files]
+                ], check=True)
+                print("✨ Pythonファイルのフォーマット完了")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
+    except FileNotFoundError:
+        print("⚠️  ruffが見つかりません。手動でフォーマットしてください")
 
 
 def convert_openapi_type_to_typescript(prop_def: dict[str, Any]) -> str:
@@ -357,6 +377,9 @@ def main():
 
         # TypeScript型定義生成
         generate_typescript_types(spec, str(types_output))
+
+        # 生成されたPythonファイルがあればフォーマット
+        format_generated_python_files()
 
         print("✅ 型生成が完了しました！")
         print()

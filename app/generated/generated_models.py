@@ -77,5 +77,3 @@ class ErrorResponse(BaseModel):
     detail: str = Field(description="エラーの詳細")
     error_code: Optional[str] = Field(description="エラーコード")
     timestamp: Optional[datetime] = Field(description="エラー発生時刻")
-
-

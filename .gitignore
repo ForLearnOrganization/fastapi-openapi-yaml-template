@@ -68,3 +68,7 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Old files
+*_old.py
+README_old.md
