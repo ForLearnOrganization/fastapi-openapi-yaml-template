@@ -42,7 +42,7 @@ def main():
     project_root = Path(__file__).parent.parent
     
     steps = [
-        ("python3 scripts/generate_router.py", "APIルーター自動生成"),
+        ("python3 scripts/generate_from_yaml.py", "YAML-firstコード生成"),
         ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
     ]
     
@@ -56,12 +56,14 @@ def main():
     print("🎉 バックエンド開発処理が完了しました！")
     print()
     print("📁 生成されたファイル:")
-    print("  🔧 APIルーター: app/api/v1/__init__.py")
+    print("  🔧 Pydanticモデル: app/generated/generated_models.py")
+    print("  🔧 FastAPIルーター: app/generated/generated_router.py")
     print("  📄 HTMLドキュメント: docs/static/redoc.html, swagger.html")
     print()
     print("💡 使用方法:")
-    print("  - 新しいエンドポイント追加: app/api/endpoint_registry.py を編集")
+    print("  - 新しいエンドポイント追加: source/openapi.yaml を編集")
     print("  - バックエンド再生成: python3 scripts/generate_backend.py")
+    print("  - 完全再生成: python3 scripts/generate_yaml_first.py")
     print("  - 開発サーバー起動: python3 main.py")
     print()
     print("👥 チーム開発:")

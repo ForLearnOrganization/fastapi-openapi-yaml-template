@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
 
-from app.api.v1 import api_router
+from app.generated.generated_router import main_router as api_router
 from app.core.config import settings
 from app.models import GenerateTextRequest, GenerateTextResponse
 from app.services.text_service import TextService

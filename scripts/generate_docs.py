@@ -17,17 +17,22 @@ import yaml
 
 
 def generate_openapi_schema():
-    """FastAPIアプリからOpenAPIスキーマを生成"""
-    print("📋 OpenAPIスキーマを生成中...")
+    """source/openapi.yaml から静的HTMLドキュメントを生成"""
+    print("📋 OpenAPI仕様から静的ドキュメントを生成中...")
 
-    # main.pyからアプリをインポート
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from main import app
+    # source/openapi.yaml を読み込み
+    project_root = Path(__file__).parent.parent
+    source_yaml = project_root / "source" / "openapi.yaml"
+    
+    if not source_yaml.exists():
+        print(f"❌ OpenAPI仕様ファイルが見つかりません: {source_yaml}")
+        return None, None, None
 
-    schema = app.openapi()
+    with open(source_yaml, 'r', encoding='utf-8') as f:
+        schema = yaml.safe_load(f)
 
     # generated ディレクトリを作成
-    generated_dir = Path(__file__).parent.parent / "docs" / "generated"
+    generated_dir = project_root / "docs" / "generated"
     generated_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON形式で保存
@@ -45,14 +50,9 @@ def generate_openapi_schema():
 
 
 def generate_typescript_types(openapi_json_path):
-    """TypeScript型定義を生成"""
-    print("🔧 TypeScript型定義を生成中...")
-
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from scripts.generate_client_types import main as generate_types
-
-    generate_types()
-    print("✅ TypeScript型定義を生成完了")
+    """TypeScript型定義生成をスキップ（別のスクリプトで実行）"""
+    print("⚠️ TypeScript型定義生成は scripts/generate_frontend.py で実行してください")
+    return True
 
 
 def generate_redoc_html(openapi_json_path):

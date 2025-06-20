@@ -10,7 +10,7 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
 
 ## ✨ 機能
 
-- 🏗️ **モジュラーアーキテクチャ**: ルーター、サービス、モデルのクリーンな分離
+- 🏗️ **YAML-Firstアーキテクチャ**: OpenAPI YAML仕様からコード自動生成
 - 📖 **自動生成ドキュメント**: カスタムOpenAPIスキーマを使ったSwagger UIとReDoc
 - 🔄 **型生成**: クライアントサイド開発用の自動TypeScript型生成
 - 🌐 **外部API統合**: 天気、名言、豆知識、ジョークのモックエンドポイント
@@ -18,7 +18,7 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
 - ❤️ **ヘルスチェック**: 包括的なヘルス監視エンドポイント
 - 🔧 **YAML設定**: 設定駆動開発
 - 🌍 **CORS対応**: Next.js開発用の事前設定
-- ⚡ **APIエンドポイント自動生成**: レジストリベースの自動ルーター生成システム
+- ⚡ **コード自動生成**: YAML仕様からPydanticモデル・FastAPIルーター自動生成
 - 📄 **HTMLドキュメント生成**: 静的なSwagger UIとReDocファイルの自動生成
 
 ## 🚀 簡単スタート
@@ -48,11 +48,16 @@ poetry run uvicorn main:app --reload
 ### バックエンド開発者
 
 ```bash
-# バックエンド成果物の生成（APIルーター、ドキュメント）
+# YAML-First: バックエンド成果物の生成（Pydanticモデル、FastAPIルーター、ドキュメント）
 python3 scripts/generate_backend.py
 
-# 新しいエンドポイント追加後の再生成
-python3 scripts/generate_backend.py
+# YAML-First: 完全な統合生成（推奨）
+python3 scripts/generate_yaml_first.py
+
+# 新しいエンドポイント追加フロー:
+# 1. source/openapi.yaml を編集
+# 2. python3 scripts/generate_backend.py を実行
+# 3. app/generated/generated_router.py の TODO部分を実装
 ```
 
 ### フロントエンド開発者
@@ -69,6 +74,9 @@ python3 scripts/generate_frontend.py
 ```bash
 # すべてを一括生成（バックエンド + フロントエンド）
 python3 scripts/generate_all.py
+
+# 完全なYAML-firstワークフロー
+python3 scripts/generate_yaml_first.py
 ```
 
 ### インストール
@@ -107,71 +115,77 @@ localllm-fastapi/
 │   ├── settings.json          # エディタ設定（Ruff自動フォーマット）
 │   └── extensions.json        # 推奨拡張機能
 ├── app/                       # アプリケーションソース
-│   ├── api/v1/endpoints/      # APIルートハンドラー
+│   ├── generated/             # 🤖 YAML自動生成: Pydanticモデル・FastAPIルーター
 │   ├── core/                  # 設定とコア機能
-│   ├── models/               # Pydanticスキーマ
+│   ├── models/               # Pydanticスキーマ（手動定義用）
 │   ├── services/             # ビジネスロジック
 │   └── utils/                # ユーティリティ関数
 ├── scripts/                   # 型生成・ドキュメント生成スクリプト
-│   ├── generate_client_types.py
-│   ├── generate_types.sh
-│   ├── generate_docs.py       # 📄 新規: HTML ドキュメント生成
-│   └── generate_docs.sh       # 📄 新規: ドキュメント生成スクリプト
-├── docs/                      # 📁 新規: ドキュメント管理
+│   ├── generate_backend.py    # バックエンド開発者向け生成
+│   ├── generate_frontend.py   # フロントエンド開発者向け生成
+│   ├── generate_yaml_first.py # YAML-first統合生成
+│   ├── generate_from_yaml.py  # YAMLからPython生成
+│   └── generate_docs.py       # 📄 HTML ドキュメント生成
+├── docs/                      # 📁 ドキュメント管理
 │   ├── generated/            # 🤖 自動生成: OpenAPIスキーマ
 │   └── static/               # 🤖 自動生成: 静的HTMLドキュメント
 ├── generated/                 # 🤖 自動生成: TypeScript型定義
 ├── source/                    # 📁 手動管理: ソース用YAML等
+│   └── openapi.yaml          # 🔧 API仕様定義（編集対象）
 ├── config.yaml               # アプリケーション設定
 └── main.py                   # アプリケーションエントリーポイント
 ```
 
-## 🔄 開発運用フロー
+## 🔄 YAML-First開発運用フロー
 
 ### バックエンド開発者の作業フロー
 
-1. **新しいエンドポイントの設定**
-   ```python
-   # app/api/endpoint_registry.py にエンドポイント設定を追加
-   EndpointConfig(
-       prefix="/new-feature",
-       tags=["features"],
-       module="app.api.v1.endpoints.new_feature",
-       description="新機能関連のエンドポイント",
-   ),
+1. **OpenAPI YAML仕様の編集**
+   ```yaml
+   # source/openapi.yaml でAPI仕様を定義
+   paths:
+     /api/v1/new-feature/create:
+       post:
+         tags: [features]
+         summary: 新機能作成
+         requestBody:
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/NewFeatureRequest'
+         responses:
+           '200':
+             content:
+               application/json:
+                 schema:
+                   $ref: '#/components/schemas/NewFeatureResponse'
+   
+   components:
+     schemas:
+       NewFeatureRequest:
+         type: object
+         properties:
+           name:
+             type: string
+             description: 機能名
+           description:
+             type: string
+             description: 機能説明
    ```
 
-2. **Pydanticモデルの定義**
-   ```python
-   # app/models/で新しいAPIモデルを定義
-   class NewFeatureRequest(BaseModel):
-       name: str
-       description: str
-       
-   class NewFeatureResponse(BaseModel):
-       id: int
-       name: str
-       status: str
+2. **コードとモデルの自動生成**
+   ```bash
+   # Pydanticモデル・FastAPIルーターを自動生成
+   python3 scripts/generate_backend.py
    ```
 
-3. **APIエンドポイントの実装**
+3. **生成されたスタブの実装**
    ```python
-   # app/api/v1/endpoints/new_feature.py を作成
-   from fastapi import APIRouter
-   from app.models import NewFeatureRequest, NewFeatureResponse
-   
-   router = APIRouter()
-   
-   @router.post("/create", response_model=NewFeatureResponse)
-   async def create_feature(request: NewFeatureRequest):
+   # app/generated/generated_router.py に生成された関数を実装
+   async def create_new_feature(request: NewFeatureRequest) -> NewFeatureResponse:
+       # TODO: 実装が必要 ← この部分のみ編集
        # ビジネスロジックの実装
        return NewFeatureResponse(id=1, name=request.name, status="created")
-   ```
-
-4. **バックエンド成果物の生成**
-   ```bash
-   # APIルーター、ドキュメントの生成
-   python3 scripts/generate_backend.py
    ```
 
 ### フロントエンド開発者の作業フロー

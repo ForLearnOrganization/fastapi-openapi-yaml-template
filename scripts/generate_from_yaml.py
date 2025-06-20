@@ -153,7 +153,7 @@ OpenAPI YAML仕様から自動生成されたFastAPIルーター
 \"\"\"
 
 from fastapi import APIRouter, HTTPException
-from generated_models import *
+from app.generated.generated_models import *
 
 # タグ別にルーターを分割
 health_router = APIRouter(prefix="/api/v1/health", tags=["health"])
