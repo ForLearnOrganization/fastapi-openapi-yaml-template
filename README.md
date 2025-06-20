@@ -264,6 +264,26 @@ localllm-fastapi/
 
 詳細な情報は [docs/DOCUMENTATION_GUIDE.md](docs/DOCUMENTATION_GUIDE.md) を参照してください。
 
+## 🛠️ 開発環境セットアップ
+
+### コードフォーマット設定（Ruff）
+
+#### 自動フォーマット確認方法
+1. VS Codeで任意の`.py`ファイルを開く
+2. コードを意図的に崩す（スペース削除、長い行作成など）
+3. `Ctrl+S` (Windows/Linux) または `Cmd+S` (Mac) で保存
+4. 自動的にRuffがフォーマットすることを確認
+
+#### __pycache__ディレクトリ問題の解決
+- `.gitignore`で`__pycache__/`を除外済み
+- `*.py[cod]`、`*$py.class`も除外設定済み
+- VS Code設定でFlake8を無効化してRuffのみ使用
+
+#### 詳細設定ガイド
+- [docs/RUFF_SETUP_GUIDE.md](docs/RUFF_SETUP_GUIDE.md) - Ruff設定の詳細説明
+- 保存時自動フォーマットの設定方法
+- Flake8エラー解消方法
+
 ## 📁 プロジェクト構造
 
 ```

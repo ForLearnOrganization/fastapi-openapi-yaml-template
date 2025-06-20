@@ -1,5 +1,7 @@
 # Python
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
 *.pyd
@@ -40,7 +42,7 @@ Thumbs.db
 # Generated documentation and types
 # Note: docs/static/, docs/generated/, and generated/ are now tracked in git
 
-# VSCode settings (keep extensions.json but ignore user settings)
+# VSCode settings (VS Code設定ファイル)
 .vscode/settings.json
 !.vscode/extensions.json
 
