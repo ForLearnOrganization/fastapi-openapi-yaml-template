@@ -16,8 +16,11 @@ legacy_router = APIRouter(tags=["text"])
 @health_router.get("/api/v1/health/", summary="基本ヘルスチェック")
 async def health_check() -> HealthResponse:
     """APIサーバーの基本動作確認"""
-    # TODO: 実装が必要
-    raise HTTPException(status_code=501, detail="Not implemented")
+    from datetime import datetime
+    return HealthResponse(
+        status="ok",
+        timestamp=datetime.now()
+    )
 
 @health_router.get("/api/v1/health/detailed", summary="詳細ヘルスチェック")
 async def detailed_health_check() -> DetailedHealthResponse:
