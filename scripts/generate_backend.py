@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-統合生成スクリプト
+バックエンド開発者向け統合生成スクリプト
 
-バックエンドとフロントエンド両方の成果物を一括生成します。
+APIエンドポイント、Pydanticモデル、ドキュメントを生成します。
+フロントエンド用の型定義は含まれません。
 """
 
 import subprocess
@@ -34,15 +35,15 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
 
 def main():
     """メイン処理"""
-    print("🔧 統合生成プロセスを開始...")
+    print("🔧 バックエンド開発者向け統合生成プロセスを開始...")
     print("=" * 60)
     
     # プロジェクトルートに移動
     project_root = Path(__file__).parent.parent
     
     steps = [
-        ("python3 scripts/generate_backend.py", "バックエンド生成"),
-        ("python3 scripts/generate_frontend.py", "フロントエンド型生成"),
+        ("python3 scripts/generate_router.py", "APIルーター自動生成"),
+        ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
     ]
     
     for command, description in steps:
@@ -52,20 +53,20 @@ def main():
             return 1
         print()
     
-    print("🎉 すべての生成処理が完了しました！")
+    print("🎉 バックエンド開発処理が完了しました！")
     print()
     print("📁 生成されたファイル:")
     print("  🔧 APIルーター: app/api/v1/__init__.py")
-    print("  📊 OpenAPIスキーマ: docs/generated/openapi.json, openapi.yaml")
-    print("  🔧 TypeScript型定義: generated/api-types.ts")
     print("  📄 HTMLドキュメント: docs/static/redoc.html, swagger.html")
+    print("  📊 OpenAPIスキーマ: docs/generated/openapi.json, openapi.yaml")
     print()
     print("💡 使用方法:")
     print("  - 新しいエンドポイント追加: app/api/endpoint_registry.py を編集")
-    print("  - 全体再生成: python3 scripts/generate_all.py")
-    print("  - バックエンドのみ: python3 scripts/generate_backend.py")
-    print("  - フロントエンドのみ: python3 scripts/generate_frontend.py")
+    print("  - バックエンド再生成: python3 scripts/generate_backend.py")
     print("  - 開発サーバー起動: python3 main.py")
+    print()
+    print("👥 チーム開発:")
+    print("  - フロントエンド型生成は: python3 scripts/generate_frontend.py")
     
     return 0
 

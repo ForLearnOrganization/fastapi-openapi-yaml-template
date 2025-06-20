@@ -57,7 +57,7 @@ api_router = APIRouter()
 # 新しいエンドポイントを追加するには:
 # 1. app/api/endpoint_registry.py にエンドポイント設定を追加
 # 2. app/api/v1/endpoints/ に対応する実装ファイルを作成
-# 3. このスクリプトを実行: python scripts/generate_router.py
+# 3. このスクリプトを実行: python3 scripts/generate_router.py
 # =============================================================================
 
 '''

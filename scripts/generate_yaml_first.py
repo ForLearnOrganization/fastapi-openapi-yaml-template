@@ -51,9 +51,9 @@ def main():
     print()
     
     steps = [
-        ("python scripts/generate_types_from_yaml.py", "TypeScript型定義・OpenAPIファイル生成"),
-        ("python scripts/generate_from_yaml.py", "Pydanticモデル・FastAPIルーター生成"),
-        ("python scripts/generate_docs.py", "HTMLドキュメント生成"),
+        ("python3 scripts/generate_types_from_yaml.py", "TypeScript型定義・OpenAPIファイル生成"),
+        ("python3 scripts/generate_from_yaml.py", "Pydanticモデル・FastAPIルーター生成"),
+        ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
     ]
     
     for command, description in steps:
@@ -77,7 +77,7 @@ def main():
     print("  1. 📝 source/openapi.yaml を編集（API仕様の更新）")
     print("  2. 🚀 ./scripts/generate_yaml_first.sh を実行（全自動生成）")
     print("  3. 🛠️ 必要に応じて生成されたスタブに実装を追加")
-    print("  4. 🧪 開発サーバーでテスト: python main.py")
+    print("  4. 🧪 開発サーバーでテスト: python3 main.py")
     print("  5. 📦 Next.jsで generated/api-types.ts を使用")
     print()
     print("💡 チーム開発での使用:")
