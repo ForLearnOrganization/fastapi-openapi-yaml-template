@@ -15,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
 
-from app.generated.generated_router import main_router as api_router
 from app.core.config import settings
+from app.generated.generated_router import main_router as api_router
 from app.models import GenerateTextRequest, GenerateTextResponse
 from app.services.text_service import TextService
 
@@ -95,11 +95,11 @@ def create_application() -> FastAPI:
                 .container { max-width: 800px; margin: 0 auto; }
                 .header { text-align: center; margin-bottom: 40px; }
                 .links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-                .link-card { 
-                    background: #f0f0f0; 
-                    padding: 20px; 
-                    border-radius: 8px; 
-                    text-decoration: none; 
+                .link-card {
+                    background: #f0f0f0;
+                    padding: 20px;
+                    border-radius: 8px;
+                    text-decoration: none;
                     color: #333;
                     min-width: 200px;
                     text-align: center;

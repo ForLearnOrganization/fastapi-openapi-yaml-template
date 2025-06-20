@@ -44,7 +44,10 @@ class ExternalAPIService:
                 "category": "uniqueness",
             },
             {
-                "quote": "The best time to plant a tree was 20 years ago. The second best time is now.",
+                "quote": (
+                    "The best time to plant a tree was 20 years ago. "
+                    "The second best time is now."
+                ),
                 "author": "Chinese Proverb",
                 "category": "action",
             },
@@ -52,7 +55,11 @@ class ExternalAPIService:
 
         self.mock_facts = [
             {
-                "fact": "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.",
+                "fact": (
+                    "Honey never spoils. Archaeologists have found pots of honey "
+                    "in ancient Egyptian tombs that are over 3,000 years old and "
+                    "still edible."
+                ),
                 "source": "archaeology",
             },
             {
@@ -64,7 +71,10 @@ class ExternalAPIService:
                 "source": "meteorology",
             },
             {
-                "fact": "There are more possible games of chess than atoms in the observable universe.",
+                "fact": (
+                    "There are more possible games of chess than atoms "
+                    "in the observable universe."
+                ),
                 "source": "mathematics",
             },
             {

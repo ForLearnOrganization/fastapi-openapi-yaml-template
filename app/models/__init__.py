@@ -1,7 +1,7 @@
 """Common Pydantic models and schemas."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -41,7 +41,7 @@ class GenerateTextResponse(BaseModel):
 
     generated_text: str = Field(..., description="Generated text")
     input_prompt: str = Field(..., description="Original input prompt")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 

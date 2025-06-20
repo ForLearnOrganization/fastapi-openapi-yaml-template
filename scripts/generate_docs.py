@@ -23,12 +23,12 @@ def generate_openapi_schema():
     # source/openapi.yaml を読み込み
     project_root = Path(__file__).parent.parent
     source_yaml = project_root / "source" / "openapi.yaml"
-    
+
     if not source_yaml.exists():
         print(f"❌ OpenAPI仕様ファイルが見つかりません: {source_yaml}")
         return None, None, None
 
-    with open(source_yaml, 'r', encoding='utf-8') as f:
+    with open(source_yaml, encoding='utf-8') as f:
         schema = yaml.safe_load(f)
 
     # generated ディレクトリを作成
@@ -190,7 +190,7 @@ def main():
             os.remove(json_path)
         if os.path.exists(yaml_path):
             os.remove(yaml_path)
-        
+
         # 空になったgeneratedディレクトリも削除
         generated_dir = json_path.parent
         if generated_dir.exists() and not any(generated_dir.iterdir()):

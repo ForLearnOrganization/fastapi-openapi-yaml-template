@@ -4,9 +4,9 @@ OpenAPI YAML仕様から自動生成されたPydanticモデル
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
-from enum import Enum
 
 
 class HealthResponse(BaseModel):
@@ -17,20 +17,22 @@ class HealthResponse(BaseModel):
 class DetailedHealthResponse(BaseModel):
     status: str = Field(description="全体ヘルス状態")
     timestamp: datetime = Field(description="チェック実行時刻")
-    system_info: Optional[Dict[str, Any]] = None
-    services: Optional[Dict[str, Any]] = None
+    system_info: Optional[dict[str, Any]] = None
+    services: Optional[dict[str, Any]] = None
 
 
 class GenerateTextRequest(BaseModel):
     prompt: str = Field(description="テキスト生成用のプロンプト")
     max_length: int = Field(description="生成テキストの最大長", ge=1, le=1000)
-    temperature: float = Field(description="テキスト生成の温度パラメータ", ge=0.0, le=2.0)
+    temperature: float = Field(
+        description="テキスト生成の温度パラメータ", ge=0.0, le=2.0
+    )
 
 
 class GenerateTextResponse(BaseModel):
     generated_text: str = Field(description="生成されたテキスト")
     input_prompt: str = Field(description="元の入力プロンプト")
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class EchoTextRequest(BaseModel):
@@ -39,7 +41,7 @@ class EchoTextRequest(BaseModel):
 
 class EchoTextResponse(BaseModel):
     echo: str = Field(description="エコーされたテキスト")
-    analysis: Dict[str, Any]
+    analysis: dict[str, Any]
     timestamp: datetime = Field(description="処理時刻")
 
 

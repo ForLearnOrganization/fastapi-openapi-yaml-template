@@ -157,7 +157,7 @@ export class ApiClient {
     data?: any
   ): Promise<T> {
     const url = `${this.config.baseUrl}${endpoint}`;
-    
+
     const options: RequestInit = {
       method,
       headers: {
@@ -171,7 +171,7 @@ export class ApiClient {
     }
 
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       let errorDetail = `HTTP error! status: ${response.status}`;
       try {

@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 from fastapi import FastAPI
@@ -47,7 +47,7 @@ def export_openapi_to_yaml(app: FastAPI, output_path: str = "openapi.yaml") -> N
         yaml.dump(openapi_schema, f, default_flow_style=False, allow_unicode=True)
 
 
-def load_config_from_yaml(file_path: str) -> Dict[str, Any]:
+def load_config_from_yaml(file_path: str) -> dict[str, Any]:
     """
     Load configuration from a YAML file.
 
@@ -65,7 +65,7 @@ def load_config_from_yaml(file_path: str) -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def save_config_to_yaml(config: Dict[str, Any], file_path: str) -> None:
+def save_config_to_yaml(config: dict[str, Any], file_path: str) -> None:
     """
     Save configuration to a YAML file.
 

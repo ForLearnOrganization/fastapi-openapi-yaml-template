@@ -4,6 +4,7 @@ OpenAPI YAML仕様から自動生成されたFastAPIルーター
 """
 
 from fastapi import APIRouter, HTTPException
+
 from app.generated.generated_models import *
 
 # タグ別にルーターを分割

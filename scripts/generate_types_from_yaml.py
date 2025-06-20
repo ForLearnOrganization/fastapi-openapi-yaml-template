@@ -10,18 +10,18 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
 
-def load_openapi_spec(yaml_path: str) -> Dict[str, Any]:
+def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
-    with open(yaml_path, 'r', encoding='utf-8') as f:
+    with open(yaml_path, encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 
-def convert_openapi_type_to_typescript(prop_def: Dict[str, Any]) -> str:
+def convert_openapi_type_to_typescript(prop_def: dict[str, Any]) -> str:
     """OpenAPIプロパティ定義をTypeScript型に変換します。"""
     prop_type = prop_def.get('type', 'any')
     prop_format = prop_def.get('format')
@@ -70,46 +70,46 @@ def convert_openapi_type_to_typescript(prop_def: Dict[str, Any]) -> str:
         return 'any'
 
 
-def generate_typescript_interface(name: str, schema: Dict[str, Any]) -> str:
+def generate_typescript_interface(name: str, schema: dict[str, Any]) -> str:
     """単一のTypeScriptインターフェースを生成します。"""
     description = schema.get('description', '')
     properties = schema.get('properties', {})
     required = schema.get('required', [])
-    
+
     interface_def = ""
-    
+
     if description:
         interface_def += f"/**\n * {description}\n */\n"
-    
+
     interface_def += f"export interface {name} {{\n"
-    
+
     for prop_name, prop_def in properties.items():
         is_required = prop_name in required
         prop_type = convert_openapi_type_to_typescript(prop_def)
         prop_description = prop_def.get('description', '')
-        
+
         # anyOfでnullが含まれている場合の処理
         any_of = prop_def.get('anyOf')
         if any_of and any(option.get('type') == 'null' for option in any_of):
             is_required = False
-        
+
         optional_marker = '' if is_required else '?'
-        
+
         if prop_description:
             interface_def += f"  /** {prop_description} */\n"
-        
+
         interface_def += f"  {prop_name}{optional_marker}: {prop_type};\n"
-    
+
     interface_def += "}\n"
-    
+
     return interface_def
 
 
-def extract_api_endpoints(spec: Dict[str, Any]) -> Dict[str, str]:
+def extract_api_endpoints(spec: dict[str, Any]) -> dict[str, str]:
     """API エンドポイント定数を抽出します。"""
     endpoints = {}
     paths = spec.get('paths', {})
-    
+
     for path, methods in paths.items():
         for method, operation in methods.items():
             if method.lower() in ['get', 'post', 'put', 'delete', 'patch']:
@@ -118,16 +118,16 @@ def extract_api_endpoints(spec: Dict[str, Any]) -> Dict[str, str]:
                     #操作IDを定数名に変換
                     const_name = operation_id.upper()
                     endpoints[const_name] = path
-    
+
     return endpoints
 
 
-def generate_typescript_types(spec: Dict[str, Any], output_path: str) -> None:
+def generate_typescript_types(spec: dict[str, Any], output_path: str) -> None:
     """TypeScript型定義ファイルを生成します。"""
     content = f"""// OpenAPI YAML仕様から自動生成されたTypeScript型定義
 // 生成日時: {time.strftime('%Y-%m-%d %H:%M:%S')}
 // ソース: source/openapi.yaml
-// 
+//
 // 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 
 // ベース型
@@ -141,7 +141,7 @@ export interface ApiResponse<T> {{
 
     # スキーマからインターフェースを生成
     schemas = spec.get('components', {}).get('schemas', {})
-    
+
     for schema_name, schema_def in schemas.items():
         if schema_def.get('type') == 'object':
             interface_code = generate_typescript_interface(schema_name, schema_def)
@@ -151,10 +151,10 @@ export interface ApiResponse<T> {{
     endpoints = extract_api_endpoints(spec)
     content += "// API エンドポイント定数\n"
     content += "export const API_ENDPOINTS = {\n"
-    
+
     for const_name, path in endpoints.items():
         content += f"  {const_name}: '{path}',\n"
-    
+
     content += "} as const;\n\n"
 
     # 型ヘルパー
@@ -191,7 +191,7 @@ export class ApiClient {
     data?: any
   ): Promise<T> {
     const url = `${this.config.baseUrl}${endpoint}`;
-    
+
     const options: RequestInit = {
       method,
       headers: {
@@ -205,7 +205,7 @@ export class ApiClient {
     }
 
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       let errorDetail = `HTTP error! status: ${response.status}`;
       try {
@@ -268,39 +268,39 @@ export const apiMethods = {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.HEALTH_CHECK);
   },
-  
+
   detailedHealthCheck: (): Promise<DetailedHealthResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.DETAILED_HEALTH_CHECK);
   },
-  
+
   // テキスト生成
   generateText: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GENERATE_TEXT, request);
   },
-  
+
   echoText: (request: EchoTextRequest): Promise<EchoTextResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.ECHO_TEXT, request);
   },
-  
+
   // 外部API
   getWeather: (request: WeatherRequest): Promise<WeatherResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GET_WEATHER, request);
   },
-  
+
   getRandomQuote: (): Promise<QuoteResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_RANDOM_QUOTE);
   },
-  
+
   getRandomFact: (): Promise<FactResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_RANDOM_FACT);
   },
-  
+
   getProgrammingJoke: (): Promise<JokeResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_PROGRAMMING_JOKE);
@@ -311,24 +311,24 @@ export const apiMethods = {
     # ファイルに出力
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print(f"✅ TypeScript型定義を生成しました: {output_file}")
 
 
-def generate_openapi_files(spec: Dict[str, Any], output_dir: str) -> None:
+def generate_openapi_files(spec: dict[str, Any], output_dir: str) -> None:
     """OpenAPI JSONとYAMLファイルを生成します。"""
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
+
     # JSON形式で保存
     json_path = output_path / "openapi.json"
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(spec, f, indent=2, ensure_ascii=False)
     print(f"✅ OpenAPI JSONスキーマを生成しました: {json_path}")
-    
+
     # YAML形式で保存（クリーンアップ版）
     yaml_path = output_path / "openapi.yaml"
     with open(yaml_path, 'w', encoding='utf-8') as f:
@@ -339,25 +339,25 @@ def generate_openapi_files(spec: Dict[str, Any], output_dir: str) -> None:
 def main():
     """メイン処理"""
     print("🚀 OpenAPI YAML から TypeScript 型生成を開始...")
-    
+
     # パス設定
     project_root = Path(__file__).parent.parent
     yaml_path = project_root / "source" / "openapi.yaml"
     types_output = project_root / "generated" / "api-types.ts"
-    docs_output_dir = project_root / "docs" / "generated"
-    
+    project_root / "docs" / "generated"
+
     if not yaml_path.exists():
         print(f"❌ OpenAPI YAML ファイルが見つかりません: {yaml_path}")
         sys.exit(1)
-    
+
     try:
         # OpenAPI仕様をロード
         spec = load_openapi_spec(str(yaml_path))
         print(f"📖 OpenAPI仕様をロードしました: {yaml_path}")
-        
+
         # TypeScript型定義生成
         generate_typescript_types(spec, str(types_output))
-        
+
         print("✅ 型生成が完了しました！")
         print()
         print("📁 生成されたファイル:")
@@ -366,7 +366,7 @@ def main():
         print("💡 Next.js での使用例:")
         print("  import { GenerateTextRequest, apiMethods } from './generated/api-types';")
         print("  const response = await apiMethods.generateText({ prompt: 'Hello' });")
-        
+
     except Exception as e:
         print(f"❌ 型生成エラー: {e}")
         import traceback

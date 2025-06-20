@@ -36,22 +36,22 @@ def main():
     """メイン処理"""
     print("🔧 統合生成プロセスを開始...")
     print("=" * 60)
-    
+
     # プロジェクトルートに移動
     project_root = Path(__file__).parent.parent
-    
+
     steps = [
         ("python3 scripts/generate_backend.py", "バックエンド生成"),
         ("python3 scripts/generate_frontend.py", "フロントエンド型生成"),
     ]
-    
+
     for command, description in steps:
         full_command = f"cd {project_root} && {command}"
         if run_command(full_command, description) != 0:
             print(f"❌ {description} でエラーが発生しました。処理を中断します。")
             return 1
         print()
-    
+
     print("🎉 すべての生成処理が完了しました！")
     print()
     print("📁 生成されたファイル:")
@@ -66,7 +66,7 @@ def main():
     print("  - バックエンドのみ: python3 scripts/generate_backend.py")
     print("  - フロントエンドのみ: python3 scripts/generate_frontend.py")
     print("  - 開発サーバー起動: python3 main.py")
-    
+
     return 0
 
 

@@ -37,22 +37,22 @@ def main():
     """メイン処理"""
     print("🔧 バックエンド開発者向け統合生成プロセスを開始...")
     print("=" * 60)
-    
+
     # プロジェクトルートに移動
     project_root = Path(__file__).parent.parent
-    
+
     steps = [
         ("python3 scripts/generate_from_yaml.py", "YAML-firstコード生成"),
         ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
     ]
-    
+
     for command, description in steps:
         full_command = f"cd {project_root} && {command}"
         if run_command(full_command, description) != 0:
             print(f"❌ {description} でエラーが発生しました。処理を中断します。")
             return 1
         print()
-    
+
     print("🎉 バックエンド開発処理が完了しました！")
     print()
     print("📁 生成されたファイル:")
@@ -68,7 +68,7 @@ def main():
     print()
     print("👥 チーム開発:")
     print("  - フロントエンド型生成は: python3 scripts/generate_frontend.py")
-    
+
     return 0
 
 

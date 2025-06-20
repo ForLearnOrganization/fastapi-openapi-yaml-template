@@ -37,10 +37,10 @@ def main():
     """メイン処理"""
     print("🔧 フロントエンド開発者向け型生成プロセスを開始...")
     print("=" * 60)
-    
+
     # プロジェクトルートに移動
     project_root = Path(__file__).parent.parent
-    
+
     # source/openapi.yaml の存在確認
     yaml_path = project_root / "source" / "openapi.yaml"
     if yaml_path.exists():
@@ -53,14 +53,14 @@ def main():
         steps = [
             ("python3 scripts/generate_client_types.py", "FastAPIからTypeScript型生成"),
         ]
-    
+
     for command, description in steps:
         full_command = f"cd {project_root} && {command}"
         if run_command(full_command, description) != 0:
             print(f"❌ {description} でエラーが発生しました。処理を中断します。")
             return 1
         print()
-    
+
     print("🎉 フロントエンド型生成が完了しました！")
     print()
     print("📁 生成されたファイル:")
@@ -85,7 +85,7 @@ def main():
     print("👥 チーム開発:")
     print("  - バックエンド再生成は: python3 scripts/generate_backend.py")
     print("  - プロジェクト全体: python3 scripts/generate_all.py")
-    
+
     return 0
 
 
