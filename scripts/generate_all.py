@@ -7,6 +7,7 @@
 
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 
@@ -29,6 +30,14 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
         print(f"❌ エラーが発生しました: {e}")
         if e.stderr:
             print(f"エラー詳細: {e.stderr}")
+        # デバッグ用のトレースバック表示
+        print("🔍 詳細トレースバック:")
+        traceback.print_exc()
+        return 1
+    except Exception as e:
+        print(f"❌ 予期しないエラーが発生しました: {e}")
+        print("🔍 詳細トレースバック:")
+        traceback.print_exc()
         return 1
 
 
@@ -41,8 +50,8 @@ def main():
     project_root = Path(__file__).parent.parent
 
     steps = [
-        ("python3 scripts/generate_backend.py", "バックエンド生成"),
-        ("python3 scripts/generate_frontend.py", "フロントエンド型生成"),
+        (f'"{sys.executable}" scripts/generate_backend.py', "バックエンド生成"),
+        (f'"{sys.executable}" scripts/generate_frontend.py', "フロントエンド型生成"),
     ]
 
     for command, description in steps:

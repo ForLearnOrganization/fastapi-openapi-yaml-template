@@ -26,19 +26,19 @@ def format_generated_files(output_dir: Path) -> None:
         python_files = list(output_dir.glob("*.py"))
         if python_files:
             print("🎨 生成されたファイルをフォーマット中...")
-            # まずフォーマットのみ実行（エラーがあってもフォーマットは可能）
+            # poetry環境内でruffを実行
             subprocess.run([
                 "poetry", "run", "ruff", "format", *[str(f) for f in python_files]
-            ], check=True, cwd=output_dir.parent)
+            ], check=True, cwd=output_dir.parent.parent)
             # 次に修正可能なエラーをfix（失敗しても継続）
             subprocess.run([
                 "poetry", "run", "ruff", "check", "--fix", *[str(f) for f in python_files]
-            ], cwd=output_dir.parent)
+            ], cwd=output_dir.parent.parent)
             print("✨ フォーマット完了")
     except subprocess.CalledProcessError as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
     except FileNotFoundError:
-        print("⚠️  ruffが見つかりません。手動でフォーマットしてください")
+        print("⚠️  poetryまたはruffが見つかりません。手動でフォーマットしてください")
 
 
 def generate_pydantic_models(spec: dict[str, Any], output_dir: str) -> None:
@@ -173,13 +173,29 @@ def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
 
     router_file = output_path / "generated_router.py"
 
-    content = """\"\"\"
+    # モデルをインポートするための名前を収集
+    schemas = spec.get('components', {}).get('schemas', {})
+    model_imports = []
+    for schema_name in schemas.keys():
+        model_imports.append(schema_name)
+
+    imports_str = ""
+    if model_imports:
+        # 長い行を避けるため、インポートを複数行に分割
+        if len(", ".join(model_imports)) > 60:
+            imports_str = "(\n    " + ",\n    ".join(model_imports) + ",\n)"
+        else:
+            imports_str = ", ".join(model_imports)
+
+    content = f'''"""
 OpenAPI YAML仕様から自動生成されたFastAPIルーター
 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
-\"\"\"
+"""
 
 from fastapi import APIRouter, HTTPException
-from app.generated.generated_models import *
+
+# ruff: noqa: F401
+from app.generated.generated_models import {imports_str}
 
 # タグ別にルーターを分割
 health_router = APIRouter(prefix="/api/v1/health", tags=["health"])
@@ -188,7 +204,7 @@ external_router = APIRouter(prefix="/api/v1/external", tags=["external"])
 legacy_router = APIRouter(tags=["text"])
 
 
-"""
+'''
 
     # パスからエンドポイントを生成
     paths = spec.get('paths', {})

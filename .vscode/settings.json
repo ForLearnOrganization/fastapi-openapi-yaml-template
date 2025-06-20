@@ -9,6 +9,11 @@
   "python.linting.pylintEnabled": false,
   "python.linting.mypyEnabled": false,
   
+  // flake8を完全に無効化（VS Code拡張機能レベル）
+  "flake8.enabled": false,
+  "python.analysis.ignore": ["*.py"],
+  "python.analysis.autoImportCompletions": false,
+  
   // Ruffフォーマッター設定
   "python.formatting.provider": "none",
   "[python]": {
@@ -47,5 +52,10 @@
   "[json]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  
+  // 生成ファイル用の設定を除外
+  "files.associations": {
+    "**/generated/*.py": "python"
   }
 }

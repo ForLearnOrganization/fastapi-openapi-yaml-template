@@ -1,7 +1,7 @@
 // OpenAPI YAML仕様から自動生成されたTypeScript型定義
-// 生成日時: 2025-06-20 07:14:20
+// 生成日時: 2025-06-20 08:58:20
 // ソース: source/openapi.yaml
-// 
+//
 // 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 
 // ベース型
@@ -153,7 +153,7 @@ export class ApiClient {
     data?: any
   ): Promise<T> {
     const url = `${this.config.baseUrl}${endpoint}`;
-    
+
     const options: RequestInit = {
       method,
       headers: {
@@ -167,7 +167,7 @@ export class ApiClient {
     }
 
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       let errorDetail = `HTTP error! status: ${response.status}`;
       try {
@@ -230,39 +230,39 @@ export const apiMethods = {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.HEALTH_CHECK);
   },
-  
+
   detailedHealthCheck: (): Promise<DetailedHealthResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.DETAILED_HEALTH_CHECK);
   },
-  
+
   // テキスト生成
   generateText: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GENERATE_TEXT, request);
   },
-  
+
   echoText: (request: EchoTextRequest): Promise<EchoTextResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.ECHO_TEXT, request);
   },
-  
+
   // 外部API
   getWeather: (request: WeatherRequest): Promise<WeatherResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GET_WEATHER, request);
   },
-  
+
   getRandomQuote: (): Promise<QuoteResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_RANDOM_QUOTE);
   },
-  
+
   getRandomFact: (): Promise<FactResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_RANDOM_FACT);
   },
-  
+
   getProgrammingJoke: (): Promise<JokeResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_PROGRAMMING_JOKE);
