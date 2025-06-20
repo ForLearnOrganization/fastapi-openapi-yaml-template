@@ -107,6 +107,43 @@ python3 scripts/generate_yaml_first.py
    - **代替ドキュメント**: http://localhost:8000/redoc
    - **ルートページ**: http://localhost:8000/
 
+## 🛠️ 開発環境設定
+
+### VS Code 自動フォーマット設定
+プロジェクトには VS Code での効率的な開発のための設定が含まれています：
+
+- **保存時自動フォーマット**: `Ctrl+S`でRuffによる自動コード整形
+- **__pycache__統合**: 散在する`__pycache__`ディレクトリを`.cache/pycache/`に統合
+- **推奨拡張機能**: 開発に必要な拡張機能を自動提案
+
+詳細な設定方法は → [📖 VS Code設定ガイド](docs/VSCODE_SETUP_GUIDE.md)
+
+### 初回セットアップ手順
+```bash
+# 1. 環境変数ファイルの準備
+cp .env.example .env
+
+# 2. VS Code で開いて推奨拡張機能をインストール
+# 3. Python インタープリターを選択（Ctrl+Shift+P → "Python: Select Interpreter"）
+```
+
+### 自動フォーマット動作確認
+```python
+# 1. 任意の.pyファイルに複数の空行を追加
+
+
+
+
+def test():
+    pass
+
+
+
+
+# 2. Ctrl+S で保存
+# 3. 空行が自動的に適切な数に調整されることを確認
+```
+
 ## 📁 プロジェクト構造
 
 ```
@@ -114,6 +151,9 @@ localllm-fastapi/
 ├── .vscode/                    # VSCode設定
 │   ├── settings.json          # エディタ設定（Ruff自動フォーマット）
 │   └── extensions.json        # 推奨拡張機能
+├── .cache/                     # 統合されたPythonキャッシュディレクトリ
+│   └── pycache/               # __pycache__ディレクトリの統合先
+├── .env.example                # 環境変数テンプレート（.envにコピーして使用）
 ├── app/                       # アプリケーションソース
 │   ├── generated/             # 🤖 YAML自動生成: Pydanticモデル・FastAPIルーター
 │   ├── core/                  # 設定とコア機能

@@ -22,6 +22,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# 統合されたPythonキャッシュディレクトリ
+.cache/
+
 # Environment variables
 .env
 .env.local
@@ -43,7 +46,8 @@ Thumbs.db
 # Note: docs/static/, docs/generated/, and generated/ are now tracked in git
 
 # VSCode settings (VS Code設定ファイル)
-.vscode/settings.json
+# Note: settings.jsonは開発環境設定のためGit管理対象とする
+!.vscode/settings.json
 !.vscode/extensions.json
 
 # Logs
