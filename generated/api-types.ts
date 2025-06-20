@@ -1,5 +1,8 @@
-// OpenAPIスキーマから自動生成されたTypeScript型定義
-// 生成日時: 2025-06-19 07:30:00
+// OpenAPI YAML仕様から自動生成されたTypeScript型定義
+// 生成日時: 2025-06-20 02:57:56
+// ソース: source/openapi.yaml
+// 
+// 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 
 // ベース型
 export interface ApiResponse<T> {
@@ -8,20 +11,29 @@ export interface ApiResponse<T> {
   detail?: string;
 }
 
-export interface FactResponse {
-  /** 興味深い豆知識 */
-  fact: string;
-  /** 豆知識の出典 */
-  source?: any;
+export interface HealthResponse {
+  /** ヘルス状態 */
+  status: string;
+  /** チェック実行時刻 */
+  timestamp: string;
+}
+
+export interface DetailedHealthResponse {
+  /** 全体ヘルス状態 */
+  status: string;
+  /** チェック実行時刻 */
+  timestamp: string;
+  system_info?: Record<string, any>;
+  services?: Record<string, any>;
 }
 
 export interface GenerateTextRequest {
   /** テキスト生成用のプロンプト */
   prompt: string;
   /** 生成テキストの最大長 */
-  max_length?: any;
+  max_length?: number;
   /** テキスト生成の温度パラメータ */
-  temperature?: any;
+  temperature?: number;
 }
 
 export interface GenerateTextResponse {
@@ -29,115 +41,105 @@ export interface GenerateTextResponse {
   generated_text: string;
   /** 元の入力プロンプト */
   input_prompt: string;
-  /** 追加のメタデータ */
   metadata?: Record<string, any>;
 }
 
-export interface HTTPValidationError {
-  detail?: ValidationError[];
-}
-
-export interface HealthResponse {
-  /** アプリケーションステータス */
-  status: string;
-  /** ヘルスチェックのタイムスタンプ */
-  timestamp: string;
-  /** アプリケーションバージョン */
-  version: string;
-}
-
-export interface QuoteResponse {
-  /** 名言テキスト */
-  quote: string;
-  /** 著者名 */
-  author?: any;
-  /** カテゴリ */
-  category?: any;
-}
-
-export interface TextEchoRequest {
-  /** エコーするテキスト */
+export interface EchoTextRequest {
+  /** エコー対象のテキスト */
   text: string;
-  /** メタデータを含むかどうか */
-  include_metadata?: any;
 }
 
-export interface TextEchoResponse {
+export interface EchoTextResponse {
   /** エコーされたテキスト */
-  echo_text: string;
-  /** 文字数 */
-  character_count: number;
-  /** 単語数 */
-  word_count: number;
-  /** タイムスタンプ */
+  echo: string;
+  analysis: Record<string, any>;
+  /** 処理時刻 */
   timestamp: string;
-  /** 追加のメタデータ */
-  metadata?: Record<string, any>;
-}
-
-export interface ValidationError {
-  /** エラーの場所 */
-  loc: any[];
-  /** エラーメッセージ */
-  msg: string;
-  /** エラータイプ */
-  type: string;
 }
 
 export interface WeatherRequest {
   /** 都市名 */
   city: string;
-  /** 国コード（例: JP, US） */
-  country_code?: any;
 }
 
 export interface WeatherResponse {
   /** 都市名 */
   city: string;
-  /** 国コード */
-  country: string;
   /** 気温（摂氏） */
   temperature: number;
-  /** 天気の説明 */
-  description: string;
   /** 湿度（%） */
   humidity: number;
-  /** タイムスタンプ */
-  timestamp: string;
+  /** 天気の説明 */
+  description: string;
+  /** モックデータかどうか */
+  is_mock?: boolean;
 }
 
-// APIエンドポイントパス
+export interface QuoteResponse {
+  /** 名言 */
+  quote: string;
+  /** 著者 */
+  author: string;
+  /** カテゴリ */
+  category?: string;
+}
+
+export interface FactResponse {
+  /** 興味深い豆知識 */
+  fact: string;
+  /** 豆知識の出典 */
+  source?: string;
+}
+
+export interface JokeResponse {
+  /** プログラミングジョーク */
+  joke: string;
+  /** ジョークのタイプ */
+  type: "programming" | "dev" | "tech";
+}
+
+export interface ErrorResponse {
+  /** エラーの詳細 */
+  detail: string;
+  /** エラーコード */
+  error_code?: string;
+  /** エラー発生時刻 */
+  timestamp?: string;
+}
+
+// API エンドポイント定数
 export const API_ENDPOINTS = {
-  HEALTH: '/api/v1/health',
-  HEALTH_DETAILED: '/api/v1/health/detailed',
-  TEXT_GENERATE: '/api/v1/text/generate',
-  TEXT_ECHO: '/api/v1/text/echo',
-  EXTERNAL_WEATHER: '/api/v1/external/weather',
-  EXTERNAL_QUOTE: '/api/v1/external/quote',
-  EXTERNAL_FACT: '/api/v1/external/fact',
-  EXTERNAL_JOKE: '/api/v1/external/joke',
+  HEALTH_CHECK: '/api/v1/health/',
+  DETAILED_HEALTH_CHECK: '/api/v1/health/detailed',
+  GENERATE_TEXT: '/api/v1/text/generate',
+  ECHO_TEXT: '/api/v1/text/echo',
+  GET_WEATHER: '/api/v1/external/weather',
+  GET_RANDOM_QUOTE: '/api/v1/external/quote',
+  GET_RANDOM_FACT: '/api/v1/external/fact',
+  GET_PROGRAMMING_JOKE: '/api/v1/external/joke',
+  GENERATE_TEXT_LEGACY: '/generate',
 } as const;
 
-// リクエスト/レスポンスヘルパー型
+// 型ヘルパー
 export type ApiEndpoint = typeof API_ENDPOINTS[keyof typeof API_ENDPOINTS];
 
-// HTTPメソッド
+// HTTP メソッド
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-// APIクライアント設定
+// API クライアント設定
 export interface ApiClientConfig {
   baseUrl: string;
   timeout?: number;
   headers?: Record<string, string>;
 }
 
-// APIエラー型
+// API エラー型
 export interface ApiError {
   detail: string;
   status_code?: number;
 }
 
-// fetchベースのAPIクライアントヘルパー
+// fetchベースのAPIクライアントクラス
 export class ApiClient {
   private config: ApiClientConfig;
 
@@ -172,7 +174,7 @@ export class ApiClient {
         const errorData = await response.json();
         errorDetail = errorData.detail || errorDetail;
       } catch (e) {
-        // JSONパースエラーの場合はデフォルトメッセージを使用
+        // JSON パースエラーの場合はデフォルトメッセージを使用
       }
       throw new Error(errorDetail);
     }
@@ -209,3 +211,60 @@ export function createApiClient(baseUrl: string, options?: Partial<ApiClientConf
     ...options,
   });
 }
+
+// Next.js用のカスタムフック型定義（React Query/SWR等で使用）
+export interface UseApiOptions {
+  enabled?: boolean;
+  refetchOnWindowFocus?: boolean;
+  staleTime?: number;
+}
+
+// API呼び出し用のヘルパー型
+export type ApiRequest<T> = T extends undefined ? [] : [T];
+export type ApiMethod<Req, Res> = (...args: ApiRequest<Req>) => Promise<Res>;
+
+// 型安全なAPI呼び出し関数の例
+export const apiMethods = {
+  // ヘルスチェック
+  healthCheck: (): Promise<HealthResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.get(API_ENDPOINTS.HEALTH_CHECK);
+  },
+  
+  detailedHealthCheck: (): Promise<DetailedHealthResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.get(API_ENDPOINTS.DETAILED_HEALTH_CHECK);
+  },
+  
+  // テキスト生成
+  generateText: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.post(API_ENDPOINTS.GENERATE_TEXT, request);
+  },
+  
+  echoText: (request: EchoTextRequest): Promise<EchoTextResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.post(API_ENDPOINTS.ECHO_TEXT, request);
+  },
+  
+  // 外部API
+  getWeather: (request: WeatherRequest): Promise<WeatherResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.post(API_ENDPOINTS.GET_WEATHER, request);
+  },
+  
+  getRandomQuote: (): Promise<QuoteResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.get(API_ENDPOINTS.GET_RANDOM_QUOTE);
+  },
+  
+  getRandomFact: (): Promise<FactResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.get(API_ENDPOINTS.GET_RANDOM_FACT);
+  },
+  
+  getProgrammingJoke: (): Promise<JokeResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.get(API_ENDPOINTS.GET_PROGRAMMING_JOKE);
+  },
+} as const;
