@@ -172,7 +172,7 @@ def main():
     print("🚀 ドキュメント生成を開始...")
 
     try:
-        # 1. OpenAPIスキーマ生成
+        # 1. OpenAPIスキーマ生成（HTMLファイル生成用の一時ファイル）
         schema, json_path, yaml_path = generate_openapi_schema()
 
         # 2. TypeScript型定義生成
@@ -184,13 +184,26 @@ def main():
         # 4. Swagger UI HTML生成
         generate_swagger_html(json_path)
 
+        # 5. 一時的なJSON/YAMLファイルを削除
+        import os
+        if os.path.exists(json_path):
+            os.remove(json_path)
+        if os.path.exists(yaml_path):
+            os.remove(yaml_path)
+        
+        # 空になったgeneratedディレクトリも削除
+        generated_dir = json_path.parent
+        if generated_dir.exists() and not any(generated_dir.iterdir()):
+            generated_dir.rmdir()
+
         print("\n🎉 すべてのドキュメント生成が完了しました！")
         print("\n📁 生成されたファイル:")
-        print("  - OpenAPI JSON: docs/generated/openapi.json")
-        print("  - OpenAPI YAML: docs/generated/openapi.yaml")
         print("  - TypeScript型: generated/api-types.ts")
         print("  - ReDoc HTML: docs/static/redoc.html")
         print("  - Swagger HTML: docs/static/swagger.html")
+        print("\n💡 ドキュメントの使い分け:")
+        print("  - ReDoc: 読みやすい形式、エンドユーザー向けドキュメント")
+        print("  - Swagger: 対話式、開発者向けAPIテスト用")
 
     except Exception as e:
         print(f"❌ エラーが発生しました: {e}")

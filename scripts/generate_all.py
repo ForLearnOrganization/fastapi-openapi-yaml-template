@@ -56,7 +56,6 @@ def main():
     print()
     print("📁 生成されたファイル:")
     print("  🔧 APIルーター: app/api/v1/__init__.py")
-    print("  📊 OpenAPIスキーマ: docs/generated/openapi.json, openapi.yaml")
     print("  🔧 TypeScript型定義: generated/api-types.ts")
     print("  📄 HTMLドキュメント: docs/static/redoc.html, swagger.html")
     print()

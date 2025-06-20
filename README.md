@@ -221,6 +221,35 @@ localllm-fastapi/
 | バックエンド | `python3 scripts/generate_backend.py` | APIルーター、HTMLドキュメント | API開発・ドキュメント化 |
 | フロントエンド | `python3 scripts/generate_frontend.py` | TypeScript型定義、APIクライアント | 型安全なフロントエンド開発 |
 | プロジェクトリーダー | `python3 scripts/generate_all.py` | 全成果物 | 全体統合・リリース準備 |
+
+## 📖 ドキュメント管理
+
+### HTMLドキュメントの種類と利用方法
+
+#### 📖 ReDoc (`docs/static/redoc.html`)
+- **用途**: エンドユーザー向けの読みやすいAPIドキュメント
+- **特徴**: 美しいデザイン、詳細説明、モバイルフレンドリー
+- **推奨用途**: 外部パートナーやクライアントへの提供
+
+#### 🔧 Swagger UI (`docs/static/swagger.html`)
+- **用途**: 開発者向けの対話式APIテスト環境
+- **特徴**: Try it out機能、リクエスト/レスポンス確認
+- **推奨用途**: 内部開発チーム、API開発・テスト
+
+### ホスティングとアクセス制御
+
+```
+- ReDoc: 限定公開（パートナー・クライアント用）
+- Swagger UI: 内部限定（開発者専用）
+```
+
+**セキュリティ考慮事項**:
+- Swagger UIは実際にAPIを呼び出せるため、本番環境への接続は避ける
+- ReDocは静的ドキュメントなので比較的安全だが、API仕様が外部に見える
+- 可能であれば社内IPからのみアクセス可能にする
+
+詳細な情報は [docs/DOCUMENTATION_GUIDE.md](docs/DOCUMENTATION_GUIDE.md) を参照してください。
+
 ## 📁 プロジェクト構造
 
 ```

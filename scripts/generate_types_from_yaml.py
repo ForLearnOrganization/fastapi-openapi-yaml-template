@@ -358,15 +358,10 @@ def main():
         # TypeScript型定義生成
         generate_typescript_types(spec, str(types_output))
         
-        # OpenAPIファイル生成
-        generate_openapi_files(spec, str(docs_output_dir))
-        
         print("✅ 型生成が完了しました！")
         print()
         print("📁 生成されたファイル:")
         print(f"  🔧 TypeScript型定義: {types_output}")
-        print(f"  📊 OpenAPI JSON: {docs_output_dir}/openapi.json")
-        print(f"  📄 OpenAPI YAML: {docs_output_dir}/openapi.yaml")
         print()
         print("💡 Next.js での使用例:")
         print("  import { GenerateTextRequest, apiMethods } from './generated/api-types';")

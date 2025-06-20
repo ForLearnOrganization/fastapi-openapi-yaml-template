@@ -58,7 +58,6 @@ def main():
     print("📁 生成されたファイル:")
     print("  🔧 APIルーター: app/api/v1/__init__.py")
     print("  📄 HTMLドキュメント: docs/static/redoc.html, swagger.html")
-    print("  📊 OpenAPIスキーマ: docs/generated/openapi.json, openapi.yaml")
     print()
     print("💡 使用方法:")
     print("  - 新しいエンドポイント追加: app/api/endpoint_registry.py を編集")

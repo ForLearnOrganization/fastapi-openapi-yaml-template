@@ -38,9 +38,7 @@ wheels/
 Thumbs.db
 
 # Generated documentation and types
-docs/generated/
-docs/static/
-generated/
+# Note: docs/static/, docs/generated/, and generated/ are now tracked in git
 
 # VSCode settings (keep extensions.json but ignore user settings)
 .vscode/settings.json
