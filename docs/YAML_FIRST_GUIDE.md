@@ -33,10 +33,10 @@ vim source/openapi.yaml
 または個別実行：
 ```bash
 # TypeScript型定義生成
-python scripts/generate_frontend_code.py
+python scripts/generate_types_from_yaml.py
 
 # Pythonコード生成
-python scripts/generate_backend_code.py
+python scripts/generate_from_yaml.py
 
 # HTMLドキュメント生成
 python scripts/generate_docs.py
@@ -206,7 +206,7 @@ jobs:
         run: |
           pip install pyyaml
           python -c "import yaml; yaml.safe_load(open('source/openapi.yaml'))"
-
+      
       - name: Generate and Test
         run: |
           ./scripts/generate_yaml_first.sh

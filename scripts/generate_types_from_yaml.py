@@ -187,28 +187,26 @@ def generate_api_methods_from_spec(spec: dict[str, Any]) -> str:
     """OpenAPI仕様からapiMethodsオブジェクトを動的生成します。"""
     methods = []
     paths = spec.get("paths", {})
-
+    
     for path, methods_dict in paths.items():
         for method, operation in methods_dict.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 operation_id = operation.get("operationId", "")
                 if not operation_id:
                     continue
-
+                
                 # Create camelCase method name from operation_id with better naming
                 # Convert snake_case to camelCase and handle special cases
                 def to_camel_case(snake_str):
-                    components = snake_str.split("_")
-                    return components[0] + "".join(
-                        word.capitalize() for word in components[1:]
-                    )
-
+                    components = snake_str.split('_')
+                    return components[0] + ''.join(word.capitalize() for word in components[1:])
+                
                 method_name = to_camel_case(operation_id)
-
+                
                 # Determine request/response types
                 request_type = None
                 response_type = "any"
-
+                
                 # Check for request body
                 request_body = operation.get("requestBody", {})
                 if request_body:
@@ -218,7 +216,7 @@ def generate_api_methods_from_spec(spec: dict[str, Any]) -> str:
                     ref = schema.get("$ref")
                     if ref:
                         request_type = ref.split("/")[-1]
-
+                
                 # Check for response type
                 responses = operation.get("responses", {})
                 success_response = responses.get("200", {})
@@ -228,10 +226,10 @@ def generate_api_methods_from_spec(spec: dict[str, Any]) -> str:
                 ref = schema.get("$ref")
                 if ref:
                     response_type = ref.split("/")[-1]
-
+                
                 # Generate endpoint constant name
                 endpoint_constant = operation_id.upper()
-
+                
                 # Generate method implementation
                 if request_type:
                     method_impl = f"""  {method_name}: (request: {request_type}): Promise<{response_type}> => {{
@@ -243,9 +241,9 @@ def generate_api_methods_from_spec(spec: dict[str, Any]) -> str:
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.{method.lower()}(API_ENDPOINTS.{endpoint_constant});
   }}"""
-
+                
                 methods.append(method_impl)
-
+    
     return ",\n\n".join(methods)
 
 

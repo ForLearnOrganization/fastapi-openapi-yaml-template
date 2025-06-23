@@ -156,7 +156,7 @@ localllm-fastapi/
 │   ├── generate_backend.py    # バックエンド開発者向け生成
 │   ├── generate_frontend.py   # フロントエンド開発者向け生成
 │   ├── generate_yaml_first.py # YAML-first統合生成
-│   ├── generate_backend_code.py  # YAMLからPython生成
+│   ├── generate_from_yaml.py  # YAMLからPython生成
 │   └── generate_docs.py       # 📄 HTML ドキュメント生成
 ├── docs/                      # 📁 ドキュメント管理
 │   ├── generated/            # 🤖 自動生成: OpenAPIスキーマ

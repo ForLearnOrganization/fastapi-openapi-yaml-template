@@ -67,11 +67,11 @@ def main():
 
     steps = [
         (
-            f'"{sys.executable}" scripts/generate_frontend_code.py',
+            f'"{sys.executable}" scripts/generate_types_from_yaml.py',
             "TypeScript型定義・OpenAPIファイル生成",
         ),
         (
-            f'"{sys.executable}" scripts/generate_backend_code.py',
+            f'"{sys.executable}" scripts/generate_from_yaml.py',
             "Pydanticモデル・FastAPIルーター生成",
         ),
         (f'"{sys.executable}" scripts/generate_docs.py', "HTMLドキュメント生成"),
