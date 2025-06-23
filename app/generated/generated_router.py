@@ -21,19 +21,19 @@ from app.generated.generated_models import (
     WeatherResponse,
 )
 from app.services.external_service import (
-    get_external_fact,
-    get_external_joke,
-    get_external_quote,
-    post_external_weather,
+    get_programming_joke_impl,
+    get_random_fact_impl,
+    get_random_quote_impl,
+    get_weather_impl,
 )
 from app.services.health import (
-    get_detailed_health_check,
-    get_health_check,
+    get_detailed_health_check_impl,
+    get_health_check_impl,
 )
 from app.services.text_service import (
-    post_generate,
-    post_text_echo,
-    post_text_generate,
+    post_echo_text_impl,
+    post_generate_text_impl,
+    post_generate_text_legacy_impl,
 )
 
 # タグ別にルーターを分割（prefixは相対パスのみ、main.pyで/api/v1が追加される）
@@ -46,55 +46,55 @@ legacy_router = APIRouter(tags=["text"])
 @health_router.get("/", summary="基本ヘルスチェック")
 async def health_check() -> HealthResponse:
     """APIサーバーの基本動作確認"""
-    return await get_health_check()
+    return await get_health_check_impl()
 
 
 @health_router.get("/detailed", summary="詳細ヘルスチェック")
 async def detailed_health_check() -> DetailedHealthResponse:
     """システムの詳細情報とヘルス状態"""
-    return await get_detailed_health_check()
+    return await get_detailed_health_check_impl()
 
 
 @text_router.post("/generate", summary="テキスト生成")
 async def generate_text(request: GenerateTextRequest) -> GenerateTextResponse:
     """ルールベースまたはLLMを使用したテキスト生成"""
-    return await post_text_generate(request)
+    return await post_generate_text_impl(request)
 
 
 @text_router.post("/echo", summary="テキストエコーと分析")
 async def echo_text(request: EchoTextRequest) -> EchoTextResponse:
     """入力テキストの分析とメタデータ付きレスポンス"""
-    return await post_text_echo(request)
+    return await post_echo_text_impl(request)
 
 
 @external_router.post("/weather", summary="天気情報取得")
 async def get_weather(request: WeatherRequest) -> WeatherResponse:
     """指定された都市の天気情報（モックデータ）"""
-    return await post_external_weather(request)
+    return await get_weather_impl(request)
 
 
 @external_router.get("/quote", summary="ランダム名言取得")
 async def get_random_quote() -> QuoteResponse:
     """インスピレーション名言の取得（モックデータ）"""
-    return await get_external_quote()
+    return await get_random_quote_impl()
 
 
 @external_router.get("/fact", summary="ランダム豆知識取得")
 async def get_random_fact() -> FactResponse:
     """興味深い豆知識の取得（モックデータ）"""
-    return await get_external_fact()
+    return await get_random_fact_impl()
 
 
 @external_router.get("/joke", summary="プログラミングジョーク取得")
 async def get_programming_joke() -> JokeResponse:
     """開発者向けユーモア（モックデータ）"""
-    return await get_external_joke()
+    return await get_programming_joke_impl()
 
 
 @legacy_router.post("/generate", summary="テキスト生成（後方互換）")
 async def generate_text_legacy(request: GenerateTextRequest) -> GenerateTextResponse:
     """既存コードとの後方互換性のためのエンドポイント"""
-    return await post_generate(request)
+    return await post_generate_text_legacy_impl(request)
 
 
 # メインルーターを作成
