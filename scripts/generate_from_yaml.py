@@ -232,6 +232,74 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
         return "Any"
 
 
+def extract_tags_from_spec(spec: dict[str, Any]) -> list[dict[str, str]]:
+    """OpenAPI仕様からタグ情報を抽出します。"""
+    tags = spec.get("tags", [])
+    return [{"name": tag["name"], "description": tag.get("description", "")} for tag in tags]
+
+
+def extract_router_prefixes_from_paths(spec: dict[str, Any]) -> dict[str, str]:
+    """パスから各タグのプレフィックスを抽出します。"""
+    paths = spec.get("paths", {})
+    tag_prefixes = {}
+    
+    for path, methods in paths.items():
+        for method, operation in methods.items():
+            if method.lower() in ["get", "post", "put", "delete", "patch"]:
+                tags = operation.get("tags", [])
+                if tags:
+                    tag_name = tags[0]  # 最初のタグを使用
+                    
+                    # レガシーパスは特別扱い
+                    if path.startswith("/generate"):
+                        continue  # レガシーパスはプレフィックス抽出をスキップ
+                    
+                    # パスからプレフィックスを推測
+                    if path.startswith("/api/v1/"):
+                        # /api/v1/health/ -> /health
+                        # /api/v1/text/generate -> /text
+                        path_parts = path.split("/")[3:]  # ['health', ''] または ['text', 'generate']
+                        if path_parts and path_parts[0]:
+                            prefix = f"/{path_parts[0]}"
+                            if tag_name not in tag_prefixes:
+                                tag_prefixes[tag_name] = prefix
+    
+    return tag_prefixes
+
+
+def generate_router_definitions(spec: dict[str, Any]) -> str:
+    """タグ情報から動的にルーター定義を生成します。"""
+    tags = extract_tags_from_spec(spec)
+    tag_prefixes = extract_router_prefixes_from_paths(spec)
+    
+    router_definitions = []
+    router_names = []
+    
+    for tag in tags:
+        tag_name = tag["name"]
+        prefix = tag_prefixes.get(tag_name, f"/{tag_name}")
+        
+        router_var_name = f"{tag_name}_router"
+        router_names.append(router_var_name)
+        
+        router_def = f'{router_var_name} = APIRouter(prefix="{prefix}", tags=["{tag_name}"])'
+        router_definitions.append(router_def)
+    
+    # レガシールーター（プレフィックスなし）の処理
+    legacy_needed = False
+    paths = spec.get("paths", {})
+    for path in paths.keys():
+        if not path.startswith("/api/v1/"):
+            legacy_needed = True
+            break
+    
+    if legacy_needed:
+        router_definitions.append('legacy_router = APIRouter(tags=["text"])')
+        router_names.append("legacy_router")
+    
+    return "\n".join(router_definitions), router_names
+
+
 def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
     """FastAPIルータースタブを生成します。"""
     output_path = Path(output_dir)
@@ -253,6 +321,9 @@ def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
         else:
             imports_str = ", ".join(model_imports)
 
+    # 動的ルーター定義を生成
+    router_definitions, router_names = generate_router_definitions(spec)
+
     content = f'''"""
 OpenAPI YAML仕様から自動生成されたFastAPIルーター
 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
@@ -272,10 +343,7 @@ from app.services.health import get_health, get_health_detailed
 from app.services.text_service import post_generate, post_text_echo, post_text_generate
 
 # タグ別にルーターを分割（prefixは相対パスのみ、main.pyで/api/v1が追加される）
-health_router = APIRouter(prefix="/health", tags=["health"])
-text_router = APIRouter(prefix="/text", tags=["text"])
-external_router = APIRouter(prefix="/external", tags=["external"])
-legacy_router = APIRouter(tags=["text"])
+{router_definitions}
 
 
 '''
@@ -287,17 +355,22 @@ legacy_router = APIRouter(tags=["text"])
         for method, operation in methods.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 endpoint_code = generate_endpoint_implementation(
-                    path, method, operation
+                    path, method, operation, spec
                 )
                 content += endpoint_code + "\n\n"
 
-    # 主ルーターに登録
-    content += """
+    # 主ルーターに登録 - 動的生成
+    main_router_includes = []
+    for router_name in router_names:
+        if router_name != "legacy_router":  # Legacy router is mounted separately
+            main_router_includes.append(f"main_router.include_router({router_name})")
+    
+    router_registration = "\n".join(main_router_includes)
+    
+    content += f"""
 # メインルーターを作成
 main_router = APIRouter()
-main_router.include_router(health_router)
-main_router.include_router(text_router)
-main_router.include_router(external_router)
+{router_registration}
 
 # Legacy router should be separate (not include in main_router)
 # so it can be mounted without /api/v1 prefix
@@ -310,7 +383,7 @@ main_router.include_router(external_router)
 
 
 def generate_endpoint_implementation(
-    path: str, method: str, operation: dict[str, Any]
+    path: str, method: str, operation: dict[str, Any], spec: dict[str, Any]
 ) -> str:
     """単一のエンドポイント実装を生成します。"""
     operation_id = operation.get(
@@ -321,31 +394,28 @@ def generate_endpoint_implementation(
     description = operation.get("description", "")
     tags = operation.get("tags", [])
 
-    # ルーター選択と相対パス計算
+    # ルーター選択と相対パス計算 - 動的生成
     router_name = "main_router"
     relative_path = path
 
     if tags:
         tag = tags[0]
-        if tag == "health":
-            router_name = "health_router"
-            # /api/v1/health/ -> /
-            # /api/v1/health/detailed -> /detailed
-            relative_path = path.replace("/api/v1/health", "") or "/"
-        elif tag == "text":
+        tag_prefixes = extract_router_prefixes_from_paths(spec)
+        
+        if tag in tag_prefixes:
             if path.startswith("/generate"):
+                # レガシーエンドポイントの特別処理
                 router_name = "legacy_router"
                 relative_path = path  # /generate stays as is
             else:
-                router_name = "text_router"
-                # /api/v1/text/generate -> /generate
-                # /api/v1/text/echo -> /echo
-                relative_path = path.replace("/api/v1/text", "") or "/"
-        elif tag == "external":
-            router_name = "external_router"
-            # /api/v1/external/weather -> /weather
-            # /api/v1/external/quote -> /quote
-            relative_path = path.replace("/api/v1/external", "") or "/"
+                router_name = f"{tag}_router"
+                prefix = tag_prefixes[tag]
+                if prefix and path.startswith(f"/api/v1{prefix}"):
+                    # /api/v1/health/ -> / または /api/v1/health/detailed -> /detailed
+                    relative_path = path.replace(f"/api/v1{prefix}", "") or "/"
+                elif not prefix:
+                    # プレフィックスが空の場合はそのまま
+                    relative_path = path
 
     # リクエストボディの処理
     request_body = operation.get("requestBody")

@@ -7,18 +7,18 @@ from fastapi import APIRouter
 
 # ruff: noqa: F401
 from app.generated.generated_models import (
+    HealthResponse,
     DetailedHealthResponse,
-    EchoTextRequest,
-    EchoTextResponse,
-    ErrorResponse,
-    FactResponse,
     GenerateTextRequest,
     GenerateTextResponse,
-    HealthResponse,
-    JokeResponse,
-    QuoteResponse,
+    EchoTextRequest,
+    EchoTextResponse,
     WeatherRequest,
     WeatherResponse,
+    QuoteResponse,
+    FactResponse,
+    JokeResponse,
+    ErrorResponse,
 )
 from app.services.external_service import (
     get_external_fact,
@@ -41,48 +41,40 @@ async def health_check() -> HealthResponse:
     """APIサーバーの基本動作確認"""
     return await get_health()
 
-
 @health_router.get("/detailed", summary="詳細ヘルスチェック")
 async def detailed_health_check() -> DetailedHealthResponse:
     """システムの詳細情報とヘルス状態"""
     return await get_health_detailed()
-
 
 @text_router.post("/generate", summary="テキスト生成")
 async def generate_text(request: GenerateTextRequest) -> GenerateTextResponse:
     """ルールベースまたはLLMを使用したテキスト生成"""
     return await post_text_generate(request)
 
-
 @text_router.post("/echo", summary="テキストエコーと分析")
 async def echo_text(request: EchoTextRequest) -> EchoTextResponse:
     """入力テキストの分析とメタデータ付きレスポンス"""
     return await post_text_echo(request)
-
 
 @external_router.post("/weather", summary="天気情報取得")
 async def get_weather(request: WeatherRequest) -> WeatherResponse:
     """指定された都市の天気情報（モックデータ）"""
     return await post_external_weather(request)
 
-
 @external_router.get("/quote", summary="ランダム名言取得")
 async def get_random_quote() -> QuoteResponse:
     """インスピレーション名言の取得（モックデータ）"""
     return await get_external_quote()
-
 
 @external_router.get("/fact", summary="ランダム豆知識取得")
 async def get_random_fact() -> FactResponse:
     """興味深い豆知識の取得（モックデータ）"""
     return await get_external_fact()
 
-
 @external_router.get("/joke", summary="プログラミングジョーク取得")
 async def get_programming_joke() -> JokeResponse:
     """開発者向けユーモア（モックデータ）"""
     return await get_external_joke()
-
 
 @legacy_router.post("/generate", summary="テキスト生成（後方互換）")
 async def generate_text_legacy(request: GenerateTextRequest) -> GenerateTextResponse:

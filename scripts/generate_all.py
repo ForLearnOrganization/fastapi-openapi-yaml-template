@@ -96,7 +96,7 @@ def main():
     print()
     print("🔄 開発フロー:")
     print("  1. 📝 source/openapi.yaml を編集（API仕様の更新）")
-    print("  2. 🚀 python3 scripts/generate_yaml_first.py を実行（全自動生成）")
+    print("  2. 🚀 python3 scripts/generate_all.py を実行（全自動生成）")
     print("  3. 🛠️ 必要に応じて生成されたスタブに実装を追加")
     print("  4. 🧪 開発サーバーでテスト: python3 main.py")
     print("  5. 📦 Next.jsで scripts/generated/api-types.ts を使用")
