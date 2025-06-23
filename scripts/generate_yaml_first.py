@@ -17,8 +17,8 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
     try:
         # PYTHONPYCACHEPREFIX環境変数を設定して__pycache__を統合
         env = os.environ.copy()
-        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
-        
+        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
+
         result = subprocess.run(
             command,
             shell=True,
@@ -57,8 +57,14 @@ def main():
     print()
 
     steps = [
-        ("python3 scripts/generate_types_from_yaml.py", "TypeScript型定義・OpenAPIファイル生成"),
-        ("python3 scripts/generate_from_yaml.py", "Pydanticモデル・FastAPIルーター生成"),
+        (
+            "python3 scripts/generate_types_from_yaml.py",
+            "TypeScript型定義・OpenAPIファイル生成",
+        ),
+        (
+            "python3 scripts/generate_from_yaml.py",
+            "Pydanticモデル・FastAPIルーター生成",
+        ),
         ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
     ]
 

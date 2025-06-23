@@ -16,7 +16,7 @@ import yaml
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
-    with open(yaml_path, encoding='utf-8') as f:
+    with open(yaml_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -26,49 +26,81 @@ def format_generated_files(output_dir: Path) -> None:
         python_files = list(output_dir.glob("*.py"))
         if not python_files:
             return
-            
+
         print("🎨 生成されたファイルをフォーマット中...")
-        
+
         # PYTHONPYCACHEPREFIX環境変数を設定
         import os
+
         env = os.environ.copy()
-        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
-        
+        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
+
         # まずpoetry run ruffを試す
         try:
-            subprocess.run([
-                sys.executable, "-m", "poetry", "run", "ruff", "format", 
-                *[str(f) for f in python_files]
-            ], check=True, cwd=output_dir.parent.parent, capture_output=True, env=env)
-            
-            subprocess.run([
-                sys.executable, "-m", "poetry", "run", "ruff", "check", "--fix", 
-                *[str(f) for f in python_files]
-            ], check=False, cwd=output_dir.parent.parent, capture_output=True, env=env)
-            
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "poetry",
+                    "run",
+                    "ruff",
+                    "format",
+                    *[str(f) for f in python_files],
+                ],
+                check=True,
+                cwd=output_dir.parent.parent,
+                capture_output=True,
+                env=env,
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "poetry",
+                    "run",
+                    "ruff",
+                    "check",
+                    "--fix",
+                    *[str(f) for f in python_files],
+                ],
+                check=False,
+                cwd=output_dir.parent.parent,
+                capture_output=True,
+                env=env,
+            )
+
             print("✨ フォーマット完了（poetry経由）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-        
+
         # 次に直接ruffを試す
         try:
-            subprocess.run([
-                "ruff", "format", *[str(f) for f in python_files]
-            ], check=True, cwd=output_dir.parent.parent, capture_output=True, env=env)
-            
-            subprocess.run([
-                "ruff", "check", "--fix", *[str(f) for f in python_files]
-            ], check=False, cwd=output_dir.parent.parent, capture_output=True, env=env)
-            
+            subprocess.run(
+                ["ruff", "format", *[str(f) for f in python_files]],
+                check=True,
+                cwd=output_dir.parent.parent,
+                capture_output=True,
+                env=env,
+            )
+
+            subprocess.run(
+                ["ruff", "check", "--fix", *[str(f) for f in python_files]],
+                check=False,
+                cwd=output_dir.parent.parent,
+                capture_output=True,
+                env=env,
+            )
+
             print("✨ フォーマット完了（直接実行）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-            
+
         # 最後にpip install ruffでインストールして試す
         print("⚠️  ruffが見つかりません。基本的なフォーマットを適用します...")
-        
+
     except Exception as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
 
@@ -94,14 +126,14 @@ from pydantic import BaseModel, Field
 """
 
     # コンポーネント/スキーマからモデルを生成
-    schemas = spec.get('components', {}).get('schemas', {})
+    schemas = spec.get("components", {}).get("schemas", {})
 
     for schema_name, schema_def in schemas.items():
-        if schema_def.get('type') == 'object':
+        if schema_def.get("type") == "object":
             model_code = generate_model_class(schema_name, schema_def)
             content += model_code + "\n\n"
 
-    with open(models_file, 'w', encoding='utf-8') as f:
+    with open(models_file, "w", encoding="utf-8") as f:
         f.write(content)
 
     print(f"✅ Pydanticモデルを生成しました: {models_file}")
@@ -109,25 +141,25 @@ from pydantic import BaseModel, Field
 
 def generate_model_class(name: str, schema: dict[str, Any]) -> str:
     """単一のPydanticモデルクラスを生成します。"""
-    description = schema.get('description', '')
-    properties = schema.get('properties', {})
-    required = schema.get('required', [])
+    description = schema.get("description", "")
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
 
     # クラス定義開始
-    class_def = f'class {name}(BaseModel):'
+    class_def = f"class {name}(BaseModel):"
     if description:
         class_def += f'\n    """{description}"""'
 
-    class_def += '\n'
+    class_def += "\n"
 
     # プロパティを生成
     for prop_name, prop_def in properties.items():
         is_required = prop_name in required
         field_type = convert_openapi_type_to_python(prop_def)
-        field_description = prop_def.get('description', '')
+        field_description = prop_def.get("description", "")
 
         # デフォルト値の処理
-        default_value = prop_def.get('default')
+        default_value = prop_def.get("default")
         field_def = ""
 
         if not is_required:
@@ -135,10 +167,10 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
                 if isinstance(default_value, str):
                     field_def = f' = "{default_value}"'
                 else:
-                    field_def = f' = {default_value}'
+                    field_def = f" = {default_value}"
             else:
-                field_type = f'Optional[{field_type}]'
-                field_def = ' = None'
+                field_type = f"Optional[{field_type}]"
+                field_def = " = None"
 
         # Field()を使用した詳細定義
         field_params = []
@@ -146,56 +178,58 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
             field_params.append(f'description="{field_description}"')
 
         # 数値制約
-        if 'minimum' in prop_def:
+        if "minimum" in prop_def:
             field_params.append(f'ge={prop_def["minimum"]}')
-        if 'maximum' in prop_def:
+        if "maximum" in prop_def:
             field_params.append(f'le={prop_def["maximum"]}')
 
         # 文字列制約
-        if 'minLength' in prop_def:
+        if "minLength" in prop_def:
             field_params.append(f'min_length={prop_def["minLength"]}')
-        if 'maxLength' in prop_def:
+        if "maxLength" in prop_def:
             field_params.append(f'max_length={prop_def["maxLength"]}')
 
         if field_params:
             # 長い行を避けるため、パラメータが多い場合は複数行に分割
             params_str = ", ".join(field_params)
-            if len(f'    {prop_name}: {field_type} = Field({params_str})') > 80:
-                field_def = f' = Field(\n        {",\n        ".join(field_params)}\n    )'
+            if len(f"    {prop_name}: {field_type} = Field({params_str})") > 80:
+                field_def = (
+                    f' = Field(\n        {",\n        ".join(field_params)}\n    )'
+                )
             else:
-                field_def = f' = Field({params_str})'
+                field_def = f" = Field({params_str})"
 
-        class_def += f'    {prop_name}: {field_type}{field_def}\n'
+        class_def += f"    {prop_name}: {field_type}{field_def}\n"
 
     return class_def
 
 
 def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
     """OpenAPIプロパティ定義をPython型に変換します。"""
-    prop_type = prop_def.get('type', 'any')
-    prop_format = prop_def.get('format')
+    prop_type = prop_def.get("type", "any")
+    prop_format = prop_def.get("format")
 
-    if prop_type == 'string':
-        if prop_format == 'date-time':
-            return 'datetime'
-        return 'str'
-    elif prop_type == 'integer':
-        return 'int'
-    elif prop_type == 'number':
-        return 'float'
-    elif prop_type == 'boolean':
-        return 'bool'
-    elif prop_type == 'array':
-        item_type = convert_openapi_type_to_python(prop_def.get('items', {}))
-        return f'list[{item_type}]'
-    elif prop_type == 'object':
-        return 'dict[str, Any]'
+    if prop_type == "string":
+        if prop_format == "date-time":
+            return "datetime"
+        return "str"
+    elif prop_type == "integer":
+        return "int"
+    elif prop_type == "number":
+        return "float"
+    elif prop_type == "boolean":
+        return "bool"
+    elif prop_type == "array":
+        item_type = convert_openapi_type_to_python(prop_def.get("items", {}))
+        return f"list[{item_type}]"
+    elif prop_type == "object":
+        return "dict[str, Any]"
     else:
         # $refの処理
-        ref = prop_def.get('$ref')
+        ref = prop_def.get("$ref")
         if ref:
-            return ref.split('/')[-1]
-        return 'Any'
+            return ref.split("/")[-1]
+        return "Any"
 
 
 def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
@@ -206,7 +240,7 @@ def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
     router_file = output_path / "generated_router.py"
 
     # モデルをインポートするための名前を収集
-    schemas = spec.get('components', {}).get('schemas', {})
+    schemas = spec.get("components", {}).get("schemas", {})
     model_imports = []
     for schema_name in schemas.keys():
         model_imports.append(schema_name)
@@ -239,11 +273,11 @@ legacy_router = APIRouter(tags=["text"])
 '''
 
     # パスからエンドポイントを生成
-    paths = spec.get('paths', {})
+    paths = spec.get("paths", {})
 
     for path, methods in paths.items():
         for method, operation in methods.items():
-            if method.lower() in ['get', 'post', 'put', 'delete', 'patch']:
+            if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 endpoint_code = generate_endpoint_stub(path, method, operation)
                 content += endpoint_code + "\n\n"
 
@@ -257,7 +291,7 @@ main_router.include_router(external_router)
 main_router.include_router(legacy_router)
 """
 
-    with open(router_file, 'w', encoding='utf-8') as f:
+    with open(router_file, "w", encoding="utf-8") as f:
         f.write(content)
 
     print(f"✅ FastAPIルータースタブを生成しました: {router_file}")
@@ -265,10 +299,13 @@ main_router.include_router(legacy_router)
 
 def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) -> str:
     """単一のエンドポイントスタブを生成します。"""
-    operation_id = operation.get('operationId', f'{method}_{path.replace("/", "_").replace("{", "").replace("}", "")}')
-    summary = operation.get('summary', '')
-    description = operation.get('description', '')
-    tags = operation.get('tags', [])
+    operation_id = operation.get(
+        "operationId",
+        f'{method}_{path.replace("/", "_").replace("{", "").replace("}", "")}',
+    )
+    summary = operation.get("summary", "")
+    description = operation.get("description", "")
+    tags = operation.get("tags", [])
 
     # ルーター選択
     router_name = "main_router"
@@ -285,30 +322,30 @@ def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) ->
             router_name = "external_router"
 
     # リクエストボディの処理
-    request_body = operation.get('requestBody')
+    request_body = operation.get("requestBody")
     request_param = ""
     if request_body:
-        content = request_body.get('content', {})
-        json_content = content.get('application/json', {})
-        schema = json_content.get('schema', {})
-        ref = schema.get('$ref')
+        content = request_body.get("content", {})
+        json_content = content.get("application/json", {})
+        schema = json_content.get("schema", {})
+        ref = schema.get("$ref")
         if ref:
-            model_name = ref.split('/')[-1]
+            model_name = ref.split("/")[-1]
             request_param = f"request: {model_name}"
 
     # レスポンスの処理
-    responses = operation.get('responses', {})
-    success_response = responses.get('200', {})
-    content = success_response.get('content', {})
-    json_content = content.get('application/json', {})
-    schema = json_content.get('schema', {})
-    ref = schema.get('$ref')
+    responses = operation.get("responses", {})
+    success_response = responses.get("200", {})
+    content = success_response.get("content", {})
+    json_content = content.get("application/json", {})
+    schema = json_content.get("schema", {})
+    ref = schema.get("$ref")
     response_type = "dict"
     if ref:
-        response_type = ref.split('/')[-1]
+        response_type = ref.split("/")[-1]
 
     # パスパラメータの処理
-    path_params = re.findall(r'\\{([^}]+)\\}', path)
+    path_params = re.findall(r"\\{([^}]+)\\}", path)
     path_param_str = ""
     if path_params:
         path_param_str = ", " + ", ".join([f"{param}: str" for param in path_params])
@@ -317,7 +354,7 @@ def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) ->
     decorator = f'@{router_name}.{method.lower()}("{path}"'
     if summary:
         decorator += f', summary="{summary}"'
-    decorator += ')'
+    decorator += ")"
 
     function_def = f"async def {operation_id}("
     if request_param:

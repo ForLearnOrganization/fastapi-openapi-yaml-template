@@ -18,7 +18,7 @@ import yaml
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
-    with open(yaml_path, encoding='utf-8') as f:
+    with open(yaml_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -29,99 +29,113 @@ def format_generated_python_files() -> None:
         generated_dir = Path("app/generated")
         if not generated_dir.exists():
             return
-            
+
         python_files = list(generated_dir.glob("*.py"))
         if not python_files:
             return
-            
+
         print("🎨 生成されたPythonファイルをフォーマット中...")
-        
+
         # PYTHONPYCACHEPREFIX環境変数を設定
         import os
+
         env = os.environ.copy()
-        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
-        
+        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
+
         # まずpoetry run ruffを試す
         try:
-            subprocess.run([
-                sys.executable, "-m", "poetry", "run", "ruff", "format", 
-                *[str(f) for f in python_files]
-            ], check=True, capture_output=True, env=env)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "poetry",
+                    "run",
+                    "ruff",
+                    "format",
+                    *[str(f) for f in python_files],
+                ],
+                check=True,
+                capture_output=True,
+                env=env,
+            )
             print("✨ Pythonファイルのフォーマット完了（poetry経由）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-        
-        # 次に直接ruffを試す  
+
+        # 次に直接ruffを試す
         try:
-            subprocess.run([
-                "ruff", "format", *[str(f) for f in python_files]
-            ], check=True, capture_output=True, env=env)
+            subprocess.run(
+                ["ruff", "format", *[str(f) for f in python_files]],
+                check=True,
+                capture_output=True,
+                env=env,
+            )
             print("✨ Pythonファイルのフォーマット完了（直接実行）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-            
+
         print("⚠️  ruffが見つかりません。基本的なフォーマットをスキップします...")
-        
+
     except Exception as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
 
 
 def convert_openapi_type_to_typescript(prop_def: dict[str, Any]) -> str:
     """OpenAPIプロパティ定義をTypeScript型に変換します。"""
-    prop_type = prop_def.get('type', 'any')
-    prop_format = prop_def.get('format')
+    prop_type = prop_def.get("type", "any")
+    prop_format = prop_def.get("format")
 
-    if prop_type == 'string':
-        if prop_format == 'date-time':
-            return 'string'  # ISO date stringとして扱う
+    if prop_type == "string":
+        if prop_format == "date-time":
+            return "string"  # ISO date stringとして扱う
         # enumの処理
-        enum_values = prop_def.get('enum')
+        enum_values = prop_def.get("enum")
         if enum_values:
-            return ' | '.join([f'"{value}"' for value in enum_values])
-        return 'string'
-    elif prop_type == 'integer':
-        return 'number'
-    elif prop_type == 'number':
-        return 'number'
-    elif prop_type == 'boolean':
-        return 'boolean'
-    elif prop_type == 'array':
-        item_type = convert_openapi_type_to_typescript(prop_def.get('items', {}))
-        return f'{item_type}[]'
-    elif prop_type == 'object':
+            return " | ".join([f'"{value}"' for value in enum_values])
+        return "string"
+    elif prop_type == "integer":
+        return "number"
+    elif prop_type == "number":
+        return "number"
+    elif prop_type == "boolean":
+        return "boolean"
+    elif prop_type == "array":
+        item_type = convert_openapi_type_to_typescript(prop_def.get("items", {}))
+        return f"{item_type}[]"
+    elif prop_type == "object":
         # additionalPropertiesがある場合
-        if prop_def.get('additionalProperties'):
-            return 'Record<string, any>'
+        if prop_def.get("additionalProperties"):
+            return "Record<string, any>"
         # プロパティが定義されている場合は個別に処理
-        properties = prop_def.get('properties', {})
+        properties = prop_def.get("properties", {})
         if properties:
             # インライン型定義
-            return 'Record<string, any>'  # 簡略化
-        return 'Record<string, any>'
+            return "Record<string, any>"  # 簡略化
+        return "Record<string, any>"
     else:
         # $refの処理
-        ref = prop_def.get('$ref')
+        ref = prop_def.get("$ref")
         if ref:
-            return ref.split('/')[-1]
+            return ref.split("/")[-1]
         # anyOfの処理
-        any_of = prop_def.get('anyOf')
+        any_of = prop_def.get("anyOf")
         if any_of:
             types = []
             for option in any_of:
-                if option.get('type') == 'null':
+                if option.get("type") == "null":
                     continue  # nullは後でOptionalとして処理
                 types.append(convert_openapi_type_to_typescript(option))
-            return ' | '.join(types) if types else 'any'
-        return 'any'
+            return " | ".join(types) if types else "any"
+        return "any"
 
 
 def generate_typescript_interface(name: str, schema: dict[str, Any]) -> str:
     """単一のTypeScriptインターフェースを生成します。"""
-    description = schema.get('description', '')
-    properties = schema.get('properties', {})
-    required = schema.get('required', [])
+    description = schema.get("description", "")
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
 
     interface_def = ""
 
@@ -133,14 +147,14 @@ def generate_typescript_interface(name: str, schema: dict[str, Any]) -> str:
     for prop_name, prop_def in properties.items():
         is_required = prop_name in required
         prop_type = convert_openapi_type_to_typescript(prop_def)
-        prop_description = prop_def.get('description', '')
+        prop_description = prop_def.get("description", "")
 
         # anyOfでnullが含まれている場合の処理
-        any_of = prop_def.get('anyOf')
-        if any_of and any(option.get('type') == 'null' for option in any_of):
+        any_of = prop_def.get("anyOf")
+        if any_of and any(option.get("type") == "null" for option in any_of):
             is_required = False
 
-        optional_marker = '' if is_required else '?'
+        optional_marker = "" if is_required else "?"
 
         if prop_description:
             interface_def += f"  /** {prop_description} */\n"
@@ -155,14 +169,14 @@ def generate_typescript_interface(name: str, schema: dict[str, Any]) -> str:
 def extract_api_endpoints(spec: dict[str, Any]) -> dict[str, str]:
     """API エンドポイント定数を抽出します。"""
     endpoints = {}
-    paths = spec.get('paths', {})
+    paths = spec.get("paths", {})
 
     for path, methods in paths.items():
         for method, operation in methods.items():
-            if method.lower() in ['get', 'post', 'put', 'delete', 'patch']:
-                operation_id = operation.get('operationId', '')
+            if method.lower() in ["get", "post", "put", "delete", "patch"]:
+                operation_id = operation.get("operationId", "")
                 if operation_id:
-                    #操作IDを定数名に変換
+                    # 操作IDを定数名に変換
                     const_name = operation_id.upper()
                     endpoints[const_name] = path
 
@@ -187,10 +201,10 @@ export interface ApiResponse<T> {{
 """
 
     # スキーマからインターフェースを生成
-    schemas = spec.get('components', {}).get('schemas', {})
+    schemas = spec.get("components", {}).get("schemas", {})
 
     for schema_name, schema_def in schemas.items():
-        if schema_def.get('type') == 'object':
+        if schema_def.get("type") == "object":
             interface_code = generate_typescript_interface(schema_name, schema_def)
             content += interface_code + "\n"
 
@@ -359,7 +373,7 @@ export const apiMethods = {
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write(content)
 
     print(f"✅ TypeScript型定義を生成しました: {output_file}")
@@ -372,13 +386,13 @@ def generate_openapi_files(spec: dict[str, Any], output_dir: str) -> None:
 
     # JSON形式で保存
     json_path = output_path / "openapi.json"
-    with open(json_path, 'w', encoding='utf-8') as f:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(spec, f, indent=2, ensure_ascii=False)
     print(f"✅ OpenAPI JSONスキーマを生成しました: {json_path}")
 
     # YAML形式で保存（クリーンアップ版）
     yaml_path = output_path / "openapi.yaml"
-    with open(yaml_path, 'w', encoding='utf-8') as f:
+    with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.dump(spec, f, default_flow_style=False, allow_unicode=True, indent=2)
     print(f"✅ OpenAPI YAMLスキーマを生成しました: {yaml_path}")
 
@@ -414,12 +428,15 @@ def main():
         print(f"  🔧 TypeScript型定義: {types_output}")
         print()
         print("💡 Next.js での使用例:")
-        print("  import { GenerateTextRequest, apiMethods } from './generated/api-types';")
+        print(
+            "  import { GenerateTextRequest, apiMethods } from './generated/api-types';"
+        )
         print("  const response = await apiMethods.generateText({ prompt: 'Hello' });")
 
     except Exception as e:
         print(f"❌ 型生成エラー: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

@@ -19,8 +19,8 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
     try:
         # PYTHONPYCACHEPREFIX環境変数を設定して__pycache__を統合
         env = os.environ.copy()
-        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
-        
+        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
+
         result = subprocess.run(
             command,
             shell=True,
@@ -61,12 +61,18 @@ def main():
     if yaml_path.exists():
         print("📖 手書きOpenAPI仕様から生成します")
         steps = [
-            (f'"{sys.executable}" scripts/generate_types_from_yaml.py', "YAML仕様からTypeScript型生成"),
+            (
+                f'"{sys.executable}" scripts/generate_types_from_yaml.py',
+                "YAML仕様からTypeScript型生成",
+            ),
         ]
     else:
         print("📖 FastAPIアプリから動的生成します")
         steps = [
-            (f'"{sys.executable}" scripts/generate_client_types.py', "FastAPIからTypeScript型生成"),
+            (
+                f'"{sys.executable}" scripts/generate_client_types.py',
+                "FastAPIからTypeScript型生成",
+            ),
         ]
 
     for command, description in steps:
@@ -84,7 +90,9 @@ def main():
     print()
     print("💡 Next.js での使用例:")
     print("  ```typescript")
-    print("  import { GenerateTextRequest, apiMethods } from './scripts/generated/api-types';")
+    print(
+        "  import { GenerateTextRequest, apiMethods } from './scripts/generated/api-types';"
+    )
     print("  ")
     print("  const response = await apiMethods.generateText({")
     print("    prompt: 'Hello world',")
