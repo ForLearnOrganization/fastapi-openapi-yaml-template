@@ -68,7 +68,7 @@ def main():
     if success:
         print("\n🎉 コード生成が完了しました！")
         print("\n📁 生成されたファイル:")
-        print("  - TypeScript型: generated/api-types.ts")
+    print("  🔧 TypeScript型定義: scripts/generated/api-types.ts")
         print("  - APIルーター: app/api/v1/__init__.py")
     else:
         print("\n❌ 一部のコード生成で問題が発生しました")

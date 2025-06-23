@@ -45,7 +45,7 @@ def generate_redoc_html(openapi_json_path):
     """ReDoc HTMLドキュメントを生成"""
     print("📄 ReDoc HTMLドキュメントを生成中...")
 
-    docs_dir = Path(__file__).parent.parent / "docs" / "static"
+    docs_dir = Path(__file__).parent / "generated" / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
 
     redoc_html_path = docs_dir / "redoc.html"
@@ -91,7 +91,7 @@ def generate_swagger_html(openapi_json_path):
     """Swagger UI HTMLドキュメントを生成"""
     print("📄 Swagger UI HTMLドキュメントを生成中...")
 
-    docs_dir = Path(__file__).parent.parent / "docs" / "static"
+    docs_dir = Path(__file__).parent / "generated" / "docs"
     swagger_html_path = docs_dir / "swagger.html"
 
     # OpenAPIスキーマを読み込んで直接HTMLに埋め込み
@@ -171,8 +171,8 @@ def main():
         print("\n📁 生成されたファイル:")
         print("  - OpenAPI JSON: docs/generated/openapi.json")
         print("  - OpenAPI YAML: docs/generated/openapi.yaml")
-        print("  - ReDoc HTML: docs/static/redoc.html")
-        print("  - Swagger HTML: docs/static/swagger.html")
+        print("  - ReDoc HTML: scripts/generated/docs/redoc.html")
+        print("  - Swagger HTML: scripts/generated/docs/swagger.html")
 
     except Exception as e:
         print(f"❌ エラーが発生しました: {e}")

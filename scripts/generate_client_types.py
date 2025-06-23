@@ -45,10 +45,10 @@ async def fetch_openapi_schema(base_url: str = "http://127.0.0.1:8001") -> dict:
         raise Exception("FastAPIサーバーに接続できませんでした")
 
 
-def save_openapi_files(schema: dict, output_dir: str = "generated"):
+def save_openapi_files(schema: dict, output_dir: str = "scripts/generated"):
     """OpenAPIスキーマを複数の形式で保存します。"""
     output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # Save as JSON
     json_path = output_path / "openapi.json"
@@ -268,9 +268,9 @@ async def main():
 
         print("\n✅ スキーマ生成が正常に完了しました！")
         print("\n生成されたファイル:")
-        print("  - generated/openapi.json (OpenAPIツール用)")
-        print("  - generated/openapi.yaml (人間が読みやすい形式)")
-        print("  - generated/api-types.ts (TypeScript型定義)")
+        print("  - scripts/generated/openapi.json (OpenAPIツール用)")
+        print("  - scripts/generated/openapi.yaml (人間が読みやすい形式)")
+        print("  - scripts/generated/api-types.ts (TypeScript型定義)")
         print("\nNext.jsでの次のステップ:")
         print("  1. api-types.ts をNext.jsプロジェクトにコピー")
         print("  2. APIコールで型を使用")

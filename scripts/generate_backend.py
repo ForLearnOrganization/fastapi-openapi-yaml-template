@@ -67,7 +67,7 @@ def main():
     print("📁 生成されたファイル:")
     print("  🔧 Pydanticモデル: app/generated/generated_models.py")
     print("  🔧 FastAPIルーター: app/generated/generated_router.py")
-    print("  📄 HTMLドキュメント: docs/static/redoc.html, swagger.html")
+    print("  📄 HTMLドキュメント: scripts/generated/docs/redoc.html, swagger.html")
     print()
     print("💡 使用方法:")
     print("  - 新しいエンドポイント追加: source/openapi.yaml を編集")

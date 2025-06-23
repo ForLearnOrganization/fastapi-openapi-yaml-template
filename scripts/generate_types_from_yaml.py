@@ -385,7 +385,7 @@ def main():
     # パス設定
     project_root = Path(__file__).parent.parent
     yaml_path = project_root / "source" / "openapi.yaml"
-    types_output = project_root / "generated" / "api-types.ts"
+    types_output = project_root / "scripts" / "generated" / "api-types.ts"
     project_root / "docs" / "generated"
 
     if not yaml_path.exists():
