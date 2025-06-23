@@ -300,6 +300,77 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
     return "\n".join(router_definitions), router_names
 
 
+def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[str]]:
+    """OpenAPI仕様からサービス関数のインポートを抽出します。"""
+    service_imports = {}  # service_module_name -> [function_names]
+    paths = spec.get("paths", {})
+    
+    for path, methods in paths.items():
+        for method, operation in methods.items():
+            if method.lower() in ["get", "post", "put", "delete", "patch"]:
+                operation_id = operation.get("operationId", "")
+                if operation_id:
+                    # Create service function name
+                    http_method = method.lower()
+                    
+                    # Check if operation_id already contains an HTTP method prefix
+                    http_methods = ["get", "post", "put", "delete", "patch"]
+                    has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
+                    
+                    if has_method_prefix:
+                        # If operation_id already has a method prefix, use it as-is
+                        service_function_name = operation_id
+                    else:
+                        # Otherwise, prepend the HTTP method
+                        service_function_name = f"{http_method}_{operation_id}"
+                    
+                    # Determine service module based on tags or path
+                    tags = operation.get("tags", [])
+                    if tags:
+                        tag = tags[0]
+                        if tag == "health":
+                            service_module = "health"
+                        elif tag == "text":
+                            service_module = "text_service"
+                        elif tag == "external":
+                            service_module = "external_service"
+                        else:
+                            service_module = f"{tag}_service"
+                    else:
+                        # Fallback based on path
+                        if "/health" in path:
+                            service_module = "health"
+                        elif "/text" in path or "/generate" in path:
+                            service_module = "text_service"
+                        elif "/external" in path:
+                            service_module = "external_service"
+                        else:
+                            service_module = "default_service"
+                    
+                    if service_module not in service_imports:
+                        service_imports[service_module] = []
+                    service_imports[service_module].append(service_function_name)
+    
+    return service_imports
+
+
+def generate_service_imports(service_imports: dict[str, list[str]]) -> str:
+    """サービスインポート文を生成します。"""
+    import_lines = []
+    
+    for service_module, function_names in service_imports.items():
+        function_names_sorted = sorted(set(function_names))  # Remove duplicates and sort
+        if len(function_names_sorted) == 1:
+            import_line = f"from app.services.{service_module} import {function_names_sorted[0]}"
+        else:
+            # Multi-line import for better readability
+            functions_str = ",\n    ".join(function_names_sorted)
+            import_line = f"from app.services.{service_module} import (\n    {functions_str},\n)"
+        import_lines.append(import_line)
+    
+    return "\n".join(import_lines)
+
+
 def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
     """FastAPIルータースタブを生成します。"""
     output_path = Path(output_dir)
@@ -321,6 +392,10 @@ def generate_router_stubs(spec: dict[str, Any], output_dir: str) -> None:
         else:
             imports_str = ", ".join(model_imports)
 
+    # 動的サービスインポートを生成
+    service_imports = extract_service_imports_from_spec(spec)
+    service_imports_str = generate_service_imports(service_imports)
+
     # 動的ルーター定義を生成
     router_definitions, router_names = generate_router_definitions(spec)
 
@@ -333,14 +408,7 @@ from fastapi import APIRouter
 
 # ruff: noqa: F401
 from app.generated.generated_models import {imports_str}
-from app.services.external_service import (
-    get_external_fact,
-    get_external_joke,
-    get_external_quote,
-    post_external_weather,
-)
-from app.services.health import get_health, get_health_detailed
-from app.services.text_service import post_generate, post_text_echo, post_text_generate
+{service_imports_str}
 
 # タグ別にルーターを分割（prefixは相対パスのみ、main.pyで/api/v1が追加される）
 {router_definitions}
@@ -463,36 +531,36 @@ def generate_endpoint_implementation(
     if description:
         docstring = f'    """{description}"""'
 
-    # 実装本体を生成
-    body = generate_endpoint_body(operation_id, path, request_param, response_type)
+    # 実装本体を生成（HTTPメソッドも渡す）
+    body = generate_endpoint_body(operation_id, path, request_param, response_type, method)
 
     return f"{decorator}\n{function_def}\n{docstring}\n{body}"
 
 
 def generate_endpoint_body(
-    operation_id: str, path: str, request_param: str, response_type: str
+    operation_id: str, path: str, request_param: str, response_type: str, http_method: str
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
-
-    # Create service function mapping based on operation_id and path
-    service_function_map = {
-        "health_check": "return await get_health()",
-        "detailed_health_check": "return await get_health_detailed()",
-        "generate_text": "return await post_text_generate(request)" if request_param else "return await post_text_generate()",
-        "generate_text_legacy": "return await post_generate(request)" if request_param else "return await post_generate()",
-        "echo_text": "return await post_text_echo(request)" if request_param else "return await post_text_echo()",
-        "get_weather": "return await post_external_weather(request)" if request_param else "return await post_external_weather()",
-        "get_random_quote": "return await get_external_quote()",
-        "get_random_fact": "return await get_external_fact()",
-        "get_programming_joke": "return await get_external_joke()",
-    }
-
-    # Return the service function call if mapped, otherwise default
-    if operation_id in service_function_map:
-        return f"    {service_function_map[operation_id]}"
+    
+    # Create service function name
+    http_method_lower = http_method.lower()
+    
+    # Check if operation_id already contains an HTTP method prefix
+    http_methods = ["get", "post", "put", "delete", "patch"]
+    has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
+    
+    if has_method_prefix:
+        # If operation_id already has a method prefix, use it as-is
+        service_function_name = operation_id
     else:
-        # Default fallback - still use service pattern
-        return '    # TODO: 実装が必要\n    raise HTTPException(status_code=501, detail="Not implemented")'
+        # Otherwise, prepend the HTTP method
+        service_function_name = f"{http_method_lower}_{operation_id}"
+
+    # Generate function call with or without parameters
+    if request_param:
+        return f"    return await {service_function_name}(request)"
+    else:
+        return f"    return await {service_function_name}()"
 
 
 def main():

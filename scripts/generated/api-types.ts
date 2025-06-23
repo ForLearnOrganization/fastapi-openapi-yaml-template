@@ -1,5 +1,5 @@
 // OpenAPI YAML仕様から自動生成されたTypeScript型定義
-// 生成日時: 2025-06-23 07:19:43
+// 生成日時: 2025-06-23 07:25:52
 // ソース: source/openapi.yaml
 //
 // 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
@@ -188,7 +188,7 @@ export class ApiClient {
   }
 
   // POSTリクエスト用のヘルパーメソッド
-  async post<T>(endpoint: ApiEndpoint, data: any): Promise<T> {
+  async post<T>(endpoint: ApiEndpoint, data?: any): Promise<T> {
     return this.request<T>(endpoint, 'POST', data);
   }
 
@@ -223,9 +223,8 @@ export interface UseApiOptions {
 export type ApiRequest<T> = T extends undefined ? [] : [T];
 export type ApiMethod<Req, Res> = (...args: ApiRequest<Req>) => Promise<Res>;
 
-// 型安全なAPI呼び出し関数の例
+// 型安全なAPI呼び出し関数（OpenAPI仕様から自動生成）
 export const apiMethods = {
-  // ヘルスチェック
   healthCheck: (): Promise<HealthResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.HEALTH_CHECK);
@@ -236,7 +235,6 @@ export const apiMethods = {
     return client.get(API_ENDPOINTS.DETAILED_HEALTH_CHECK);
   },
 
-  // テキスト生成
   generateText: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GENERATE_TEXT, request);
@@ -247,7 +245,6 @@ export const apiMethods = {
     return client.post(API_ENDPOINTS.ECHO_TEXT, request);
   },
 
-  // 外部API
   getWeather: (request: WeatherRequest): Promise<WeatherResponse> => {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.post(API_ENDPOINTS.GET_WEATHER, request);
@@ -267,4 +264,9 @@ export const apiMethods = {
     const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
     return client.get(API_ENDPOINTS.GET_PROGRAMMING_JOKE);
   },
+
+  generateTextLegacy: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.post(API_ENDPOINTS.GENERATE_TEXT_LEGACY, request);
+  }
 } as const;

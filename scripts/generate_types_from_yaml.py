@@ -183,6 +183,70 @@ def extract_api_endpoints(spec: dict[str, Any]) -> dict[str, str]:
     return endpoints
 
 
+def generate_api_methods_from_spec(spec: dict[str, Any]) -> str:
+    """OpenAPI仕様からapiMethodsオブジェクトを動的生成します。"""
+    methods = []
+    paths = spec.get("paths", {})
+    
+    for path, methods_dict in paths.items():
+        for method, operation in methods_dict.items():
+            if method.lower() in ["get", "post", "put", "delete", "patch"]:
+                operation_id = operation.get("operationId", "")
+                if not operation_id:
+                    continue
+                
+                # Create camelCase method name from operation_id with better naming
+                # Convert snake_case to camelCase and handle special cases
+                def to_camel_case(snake_str):
+                    components = snake_str.split('_')
+                    return components[0] + ''.join(word.capitalize() for word in components[1:])
+                
+                method_name = to_camel_case(operation_id)
+                
+                # Determine request/response types
+                request_type = None
+                response_type = "any"
+                
+                # Check for request body
+                request_body = operation.get("requestBody", {})
+                if request_body:
+                    content = request_body.get("content", {})
+                    json_content = content.get("application/json", {})
+                    schema = json_content.get("schema", {})
+                    ref = schema.get("$ref")
+                    if ref:
+                        request_type = ref.split("/")[-1]
+                
+                # Check for response type
+                responses = operation.get("responses", {})
+                success_response = responses.get("200", {})
+                content = success_response.get("content", {})
+                json_content = content.get("application/json", {})
+                schema = json_content.get("schema", {})
+                ref = schema.get("$ref")
+                if ref:
+                    response_type = ref.split("/")[-1]
+                
+                # Generate endpoint constant name
+                endpoint_constant = operation_id.upper()
+                
+                # Generate method implementation
+                if request_type:
+                    method_impl = f"""  {method_name}: (request: {request_type}): Promise<{response_type}> => {{
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.{method.lower()}(API_ENDPOINTS.{endpoint_constant}, request);
+  }}"""
+                else:
+                    method_impl = f"""  {method_name}: (): Promise<{response_type}> => {{
+    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    return client.{method.lower()}(API_ENDPOINTS.{endpoint_constant});
+  }}"""
+                
+                methods.append(method_impl)
+    
+    return ",\n\n".join(methods)
+
+
 def generate_typescript_types(spec: dict[str, Any], output_path: str) -> None:
     """TypeScript型定義ファイルを生成します。"""
     content = f"""// OpenAPI YAML仕様から自動生成されたTypeScript型定義
@@ -287,7 +351,7 @@ export class ApiClient {
   }
 
   // POSTリクエスト用のヘルパーメソッド
-  async post<T>(endpoint: ApiEndpoint, data: any): Promise<T> {
+  async post<T>(endpoint: ApiEndpoint, data?: any): Promise<T> {
     return this.request<T>(endpoint, 'POST', data);
   }
 
@@ -322,50 +386,15 @@ export interface UseApiOptions {
 export type ApiRequest<T> = T extends undefined ? [] : [T];
 export type ApiMethod<Req, Res> = (...args: ApiRequest<Req>) => Promise<Res>;
 
-// 型安全なAPI呼び出し関数の例
+// 型安全なAPI呼び出し関数（OpenAPI仕様から自動生成）
 export const apiMethods = {
-  // ヘルスチェック
-  healthCheck: (): Promise<HealthResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.get(API_ENDPOINTS.HEALTH_CHECK);
-  },
+"""
 
-  detailedHealthCheck: (): Promise<DetailedHealthResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.get(API_ENDPOINTS.DETAILED_HEALTH_CHECK);
-  },
+    # Dynamic API methods generation
+    api_methods = generate_api_methods_from_spec(spec)
+    content += api_methods
 
-  // テキスト生成
-  generateText: (request: GenerateTextRequest): Promise<GenerateTextResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.post(API_ENDPOINTS.GENERATE_TEXT, request);
-  },
-
-  echoText: (request: EchoTextRequest): Promise<EchoTextResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.post(API_ENDPOINTS.ECHO_TEXT, request);
-  },
-
-  // 外部API
-  getWeather: (request: WeatherRequest): Promise<WeatherResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.post(API_ENDPOINTS.GET_WEATHER, request);
-  },
-
-  getRandomQuote: (): Promise<QuoteResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.get(API_ENDPOINTS.GET_RANDOM_QUOTE);
-  },
-
-  getRandomFact: (): Promise<FactResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.get(API_ENDPOINTS.GET_RANDOM_FACT);
-  },
-
-  getProgrammingJoke: (): Promise<JokeResponse> => {
-    const client = createApiClient(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-    return client.get(API_ENDPOINTS.GET_PROGRAMMING_JOKE);
-  },
+    content += """
 } as const;
 """
 
