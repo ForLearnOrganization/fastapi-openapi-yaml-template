@@ -24,7 +24,9 @@ class DetailedHealthResponse(BaseModel):
 class GenerateTextRequest(BaseModel):
     prompt: str = Field(description="テキスト生成用のプロンプト")
     max_length: int = Field(description="生成テキストの最大長", ge=1, le=1000)
-    temperature: float = Field(description="テキスト生成の温度パラメータ", ge=0.0, le=2.0)
+    temperature: float = Field(
+        description="テキスト生成の温度パラメータ", ge=0.0, le=2.0
+    )
 
 
 class GenerateTextResponse(BaseModel):
@@ -75,5 +77,3 @@ class ErrorResponse(BaseModel):
     detail: str = Field(description="エラーの詳細")
     error_code: Optional[str] = Field(description="エラーコード")
     timestamp: Optional[datetime] = Field(description="エラー発生時刻")
-
-
