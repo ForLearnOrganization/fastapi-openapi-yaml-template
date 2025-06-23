@@ -1,9 +1,4 @@
 # 🚀 localLLM-FastAPI
-
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.8-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/python-3.9+-blue.svg?style=flat&logo=python&logoColor=white)](https://python.org)
-[![Poetry](https://img.shields.io/badge/dependency-poetry-blue.svg?style=flat&logo=poetry&logoColor=white)](https://python-poetry.org)
-
 ## 概要
 
 FastAPI経由で、localLLMを動かします。本格的なプロダクション環境で使用可能なスケーラブルなFastAPIアプリケーションです。自動生成ドキュメント、型安全なAPIエンドポイント、Next.jsプロジェクト向けのクライアントサイド型生成機能を提供します。
@@ -11,15 +6,14 @@ FastAPI経由で、localLLMを動かします。本格的なプロダクショ�
 ## ✨ 機能
 
 - 🏗️ **YAML-Firstアーキテクチャ**: OpenAPI YAML仕様からコード自動生成
-- 📖 **自動生成ドキュメント**: カスタムOpenAPIスキーマを使ったSwagger UIとReDoc
-- 🔄 **型生成**: クライアントサイド開発用の自動TypeScript型生成
+- 📖 **自動生成(ドキュメント)**: 静的なSwagger UIとReDocファイルの自動生成
+- ⚡ **自動生成(バックエンド)**: YAML仕様からPydanticモデル・FastAPIルーター自動生成
+- 🔄 **自動生成(クライアント)**: クライアントサイド開発用の自動TypeScript型生成
 - 🌐 **外部API統合**: 天気、名言、豆知識、ジョークのモックエンドポイント
 - 🧪 **テキスト生成**: ルールベースのテキスト生成サービス（実際のLLMに拡張可能）
 - ❤️ **ヘルスチェック**: 包括的なヘルス監視エンドポイント
 - 🔧 **YAML設定**: 設定駆動開発
 - 🌍 **CORS対応**: Next.js開発用の事前設定
-- ⚡ **コード自動生成**: YAML仕様からPydanticモデル・FastAPIルーター自動生成
-- 📄 **HTMLドキュメント生成**: 静的なSwagger UIとReDocファイルの自動生成
 
 ## 🚀 簡単スタート
 
@@ -121,7 +115,7 @@ python3 scripts/generate_yaml_first.py
 ### 初回セットアップ手順
 ```bash
 # 1. 環境変数ファイルの準備
-cp .env.example .env
+cp .env.example .env.local
 
 # 2. VS Code で開いて推奨拡張機能をインストール
 # 3. Python インタープリターを選択（Ctrl+Shift+P → "Python: Select Interpreter"）
@@ -199,7 +193,7 @@ localllm-fastapi/
                application/json:
                  schema:
                    $ref: '#/components/schemas/NewFeatureResponse'
-   
+
    components:
      schemas:
        NewFeatureRequest:
@@ -240,7 +234,7 @@ localllm-fastapi/
    ```typescript
    // generated/api-types.ts からインポート
    import { GenerateTextRequest, apiMethods } from './generated/api-types';
-   
+
    const MyComponent = () => {
      const handleGenerateText = async () => {
        try {
@@ -253,7 +247,7 @@ localllm-fastapi/
          console.error('API呼び出しエラー:', error);
        }
      };
-   
+
      return <button onClick={handleGenerateText}>テキスト生成</button>;
    };
    ```
@@ -261,9 +255,9 @@ localllm-fastapi/
 3. **fetchベースAPIクライアントの使用**
    ```typescript
    import { createApiClient, API_ENDPOINTS } from './generated/api-types';
-   
+
    const apiClient = createApiClient(process.env.NEXT_PUBLIC_API_URL);
-   
+
    // 型安全なAPI呼び出し
    const healthData = await apiClient.get(API_ENDPOINTS.HEALTH_CHECK);
    ```
@@ -439,25 +433,23 @@ const MyComponent = () => {
 
 ## その他の便利なコマンド
 
-### 開発サーバー
+### 開発サーバー起動
 ```bash
-# 通常起動
-python3 main.py
-
 # Poetry環境での起動
 poetry run uvicorn main:app --reload
 
 # ホットリロード付き開発サーバー
 poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# 通常起動(システムのバージョンに依存するので使わない)
+python3 main.py
 ```
 
-### コード品質チェック
+### lintチェック
 ```bash
-# Ruffによるコード検証とフォーマット
-poetry run ruff check .
-poetry run ruff format .
+make lint
 
-# 型チェック（mypyが設定されている場合）
+# 型チェック（ruffより強い型チェックをしたい場合）
 poetry run mypy app/
 ```
 
@@ -496,7 +488,7 @@ CORS_ORIGINS=["https://yourfrontend.com"]
 
 より詳細な情報については、生成されたAPIドキュメント（http://localhost:8000/docs）をご参照ください。
 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
 
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.8-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Poetry](https://img.shields.io/badge/dependency-poetry-blue.svg?style=flat&logo=poetry&logoColor=white)](https://python-poetry.org)
