@@ -195,7 +195,7 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
             if len(f"    {prop_name}: {field_type} = Field({params_str})") > 80:
                 # バックスラッシュを含む文字列を変数に分離
                 multiline_params = ",\n        ".join(field_params)
-                field_def = f' = Field(\n        {multiline_params}\n    )'
+                field_def = f" = Field(\n        {multiline_params}\n    )"
             else:
                 field_def = f" = Field({params_str})"
 
