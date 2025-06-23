@@ -28,7 +28,7 @@ def generate_openapi_schema():
         print(f"❌ OpenAPI仕様ファイルが見つかりません: {source_yaml}")
         return None, None, None
 
-    with open(source_yaml, encoding='utf-8') as f:
+    with open(source_yaml, encoding="utf-8") as f:
         schema = yaml.safe_load(f)
 
     # generated ディレクトリを作成
@@ -186,6 +186,7 @@ def main():
 
         # 5. 一時的なJSON/YAMLファイルを削除
         import os
+
         if os.path.exists(json_path):
             os.remove(json_path)
         if os.path.exists(yaml_path):

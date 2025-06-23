@@ -21,7 +21,7 @@ def generate_typescript_types():
     try:
         result = generate_types()
         # generate_typesが非同期の場合、警告は出るが動作する
-        if hasattr(result, '__await__'):
+        if hasattr(result, "__await__"):
             print("⚠️ 非同期関数の警告は無視してください（正常に動作します）")
     except Exception as e:
         print(f"❌ TypeScript型生成でエラー: {e}")
@@ -68,7 +68,7 @@ def main():
     if success:
         print("\n🎉 コード生成が完了しました！")
         print("\n📁 生成されたファイル:")
-    print("  🔧 TypeScript型定義: scripts/generated/api-types.ts")
+        print("  🔧 TypeScript型定義: scripts/generated/api-types.ts")
         print("  - APIルーター: app/api/v1/__init__.py")
     else:
         print("\n❌ 一部のコード生成で問題が発生しました")

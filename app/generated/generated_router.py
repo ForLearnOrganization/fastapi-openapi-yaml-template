@@ -3,22 +3,22 @@ OpenAPI YAML仕様から自動生成されたFastAPIルーター
 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 """
 
+# ruff: noqa: F401
 from fastapi import APIRouter, HTTPException
 
-# ruff: noqa: F401
 from app.generated.generated_models import (
-    HealthResponse,
     DetailedHealthResponse,
-    GenerateTextRequest,
-    GenerateTextResponse,
     EchoTextRequest,
     EchoTextResponse,
+    ErrorResponse,
+    FactResponse,
+    GenerateTextRequest,
+    GenerateTextResponse,
+    HealthResponse,
+    JokeResponse,
+    QuoteResponse,
     WeatherRequest,
     WeatherResponse,
-    QuoteResponse,
-    FactResponse,
-    JokeResponse,
-    ErrorResponse,
 )
 
 # タグ別にルーターを分割
@@ -34,11 +34,13 @@ async def health_check() -> HealthResponse:
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
 
+
 @health_router.get("/api/v1/health/detailed", summary="詳細ヘルスチェック")
 async def detailed_health_check() -> DetailedHealthResponse:
     """システムの詳細情報とヘルス状態"""
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
+
 
 @text_router.post("/api/v1/text/generate", summary="テキスト生成")
 async def generate_text(request: GenerateTextRequest) -> GenerateTextResponse:
@@ -46,11 +48,13 @@ async def generate_text(request: GenerateTextRequest) -> GenerateTextResponse:
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
 
+
 @text_router.post("/api/v1/text/echo", summary="テキストエコーと分析")
 async def echo_text(request: EchoTextRequest) -> EchoTextResponse:
     """入力テキストの分析とメタデータ付きレスポンス"""
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
+
 
 @external_router.post("/api/v1/external/weather", summary="天気情報取得")
 async def get_weather(request: WeatherRequest) -> WeatherResponse:
@@ -58,11 +62,13 @@ async def get_weather(request: WeatherRequest) -> WeatherResponse:
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
 
+
 @external_router.get("/api/v1/external/quote", summary="ランダム名言取得")
 async def get_random_quote() -> QuoteResponse:
     """インスピレーション名言の取得（モックデータ）"""
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
+
 
 @external_router.get("/api/v1/external/fact", summary="ランダム豆知識取得")
 async def get_random_fact() -> FactResponse:
@@ -70,11 +76,13 @@ async def get_random_fact() -> FactResponse:
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
 
+
 @external_router.get("/api/v1/external/joke", summary="プログラミングジョーク取得")
 async def get_programming_joke() -> JokeResponse:
     """開発者向けユーモア（モックデータ）"""
     # TODO: 実装が必要
     raise HTTPException(status_code=501, detail="Not implemented")
+
 
 @legacy_router.post("/generate", summary="テキスト生成（後方互換）")
 async def generate_text_legacy(request: GenerateTextRequest) -> GenerateTextResponse:

@@ -1,6 +1,5 @@
 """Core configuration and settings for the FastAPI application."""
 
-
 from pydantic_settings import BaseSettings
 
 
