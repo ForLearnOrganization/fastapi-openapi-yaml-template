@@ -258,15 +258,22 @@ OpenAPI YAML仕様から自動生成されたFastAPIルーター
 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 """
 
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 
 # ruff: noqa: F401
 from app.generated.generated_models import {imports_str}
+from app.services.text_service import TextService
+from app.services.external_service import ExternalAPIService
 
-# タグ別にルーターを分割
-health_router = APIRouter(prefix="/api/v1/health", tags=["health"])
-text_router = APIRouter(prefix="/api/v1/text", tags=["text"])
-external_router = APIRouter(prefix="/api/v1/external", tags=["external"])
+# サービスインスタンス
+text_service = TextService()
+external_service = ExternalAPIService()
+
+# タグ別にルーターを分割（prefixは相対パスのみ、main.pyで/api/v1が追加される）
+health_router = APIRouter(prefix="/health", tags=["health"])
+text_router = APIRouter(prefix="/text", tags=["text"])
+external_router = APIRouter(prefix="/external", tags=["external"])
 legacy_router = APIRouter(tags=["text"])
 
 
@@ -278,7 +285,9 @@ legacy_router = APIRouter(tags=["text"])
     for path, methods in paths.items():
         for method, operation in methods.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
-                endpoint_code = generate_endpoint_stub(path, method, operation)
+                endpoint_code = generate_endpoint_implementation(
+                    path, method, operation
+                )
                 content += endpoint_code + "\n\n"
 
     # 主ルーターに登録
@@ -288,7 +297,9 @@ main_router = APIRouter()
 main_router.include_router(health_router)
 main_router.include_router(text_router)
 main_router.include_router(external_router)
-main_router.include_router(legacy_router)
+
+# Legacy router should be separate (not include in main_router)
+# so it can be mounted without /api/v1 prefix
 """
 
     with open(router_file, "w", encoding="utf-8") as f:
@@ -297,8 +308,10 @@ main_router.include_router(legacy_router)
     print(f"✅ FastAPIルータースタブを生成しました: {router_file}")
 
 
-def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) -> str:
-    """単一のエンドポイントスタブを生成します。"""
+def generate_endpoint_implementation(
+    path: str, method: str, operation: dict[str, Any]
+) -> str:
+    """単一のエンドポイント実装を生成します。"""
     operation_id = operation.get(
         "operationId",
         f'{method}_{path.replace("/", "_").replace("{", "").replace("}", "")}',
@@ -307,19 +320,31 @@ def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) ->
     description = operation.get("description", "")
     tags = operation.get("tags", [])
 
-    # ルーター選択
+    # ルーター選択と相対パス計算
     router_name = "main_router"
+    relative_path = path
+
     if tags:
         tag = tags[0]
         if tag == "health":
             router_name = "health_router"
+            # /api/v1/health/ -> /
+            # /api/v1/health/detailed -> /detailed
+            relative_path = path.replace("/api/v1/health", "") or "/"
         elif tag == "text":
             if path.startswith("/generate"):
                 router_name = "legacy_router"
+                relative_path = path  # /generate stays as is
             else:
                 router_name = "text_router"
+                # /api/v1/text/generate -> /generate
+                # /api/v1/text/echo -> /echo
+                relative_path = path.replace("/api/v1/text", "") or "/"
         elif tag == "external":
             router_name = "external_router"
+            # /api/v1/external/weather -> /weather
+            # /api/v1/external/quote -> /quote
+            relative_path = path.replace("/api/v1/external", "") or "/"
 
     # リクエストボディの処理
     request_body = operation.get("requestBody")
@@ -351,7 +376,7 @@ def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) ->
         path_param_str = ", " + ", ".join([f"{param}: str" for param in path_params])
 
     # 関数生成
-    decorator = f'@{router_name}.{method.lower()}("{path}"'
+    decorator = f'@{router_name}.{method.lower()}("{relative_path}"'
     if summary:
         decorator += f', summary="{summary}"'
     decorator += ")"
@@ -367,9 +392,160 @@ def generate_endpoint_stub(path: str, method: str, operation: dict[str, Any]) ->
     if description:
         docstring = f'    """{description}"""'
 
-    body = '    # TODO: 実装が必要\n    raise HTTPException(status_code=501, detail="Not implemented")'
+    # 実装本体を生成
+    body = generate_endpoint_body(operation_id, path, request_param, response_type)
 
     return f"{decorator}\n{function_def}\n{docstring}\n{body}"
+
+
+def generate_endpoint_body(
+    operation_id: str, path: str, request_param: str, response_type: str
+) -> str:
+    """エンドポイントの実装本体を生成します。"""
+
+    # Health check endpoints
+    if operation_id == "health_check":
+        return """    from datetime import datetime
+    return HealthResponse(status="healthy", timestamp=datetime.now())"""
+
+    elif operation_id == "detailed_health_check":
+        return """    from datetime import datetime
+    import platform
+    import sys
+    import time
+
+    start_time = getattr(detailed_health_check, 'start_time', time.time())
+    if not hasattr(detailed_health_check, 'start_time'):
+        detailed_health_check.start_time = start_time
+
+    return DetailedHealthResponse(
+        status="healthy",
+        timestamp=datetime.now(),
+        system_info={
+            "python_version": sys.version,
+            "platform": platform.platform(),
+            "memory_usage": "not_available",  # MB (psutil not installed)
+            "uptime": time.time() - start_time
+        },
+        services={
+            "database": "not_configured",
+            "cache": "not_configured",
+            "external_apis": "mock_mode"
+        }
+    )"""
+
+    # Text generation endpoints
+    elif operation_id == "generate_text":
+        return """    try:
+        result = await text_service.generate_text(
+            prompt=request.prompt,
+            max_length=request.max_length or 100,
+            temperature=request.temperature or 0.7,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
+        )"""
+
+    elif operation_id == "generate_text_legacy":
+        return """    try:
+        result = await text_service.generate_text(
+            prompt=request.prompt,
+            max_length=request.max_length or 100,
+            temperature=request.temperature or 0.7,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
+        )"""
+
+    elif operation_id == "echo_text":
+        return """    from datetime import datetime
+    import re
+
+    # Simple text analysis
+    text = request.text
+    character_count = len(text)
+    word_count = len(text.split())
+
+    # Simple language detection (very basic)
+    if re.search(r'[ひらがなカタカナ漢字]', text):
+        language = "ja"
+    elif re.search(r'[a-zA-Z]', text):
+        language = "en"
+    else:
+        language = "unknown"
+
+    # Simple sentiment analysis (keyword based)
+    positive_words = ['good', 'great', 'excellent', '良い', '素晴らしい', '最高']
+    negative_words = ['bad', 'terrible', 'awful', '悪い', '最悪', 'ひどい']
+
+    sentiment = "neutral"
+    for word in positive_words:
+        if word in text.lower():
+            sentiment = "positive"
+            break
+    for word in negative_words:
+        if word in text.lower():
+            sentiment = "negative"
+            break
+
+    return EchoTextResponse(
+        echo=text,
+        analysis={
+            "character_count": character_count,
+            "word_count": word_count,
+            "language": language,
+            "sentiment": sentiment
+        },
+        timestamp=datetime.now()
+    )"""
+
+    # External API endpoints
+    elif operation_id == "get_weather":
+        return """    try:
+        result = await external_service.get_weather(city=request.city)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"天気情報の取得に失敗しました: {str(e)}"
+        )"""
+
+    elif operation_id == "get_random_quote":
+        return """    try:
+        result = await external_service.get_random_quote()
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"名言の取得に失敗しました: {str(e)}"
+        )"""
+
+    elif operation_id == "get_random_fact":
+        return """    try:
+        result = await external_service.get_random_fact()
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"豆知識の取得に失敗しました: {str(e)}"
+        )"""
+
+    elif operation_id == "get_programming_joke":
+        return """    try:
+        joke_data = await external_service.get_random_joke()
+        return JokeResponse(
+            joke=joke_data["joke"],
+            type=joke_data.get("category", "programming")
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"ジョークの取得に失敗しました: {str(e)}"
+        )"""
+
+    # Default fallback
+    else:
+        return '    # TODO: 実装が必要\n    raise HTTPException(status_code=501, detail="Not implemented")'
 
 
 def main():

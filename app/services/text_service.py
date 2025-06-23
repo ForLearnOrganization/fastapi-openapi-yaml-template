@@ -2,7 +2,7 @@
 
 import random
 
-from app.models import GenerateTextResponse
+from app.generated.generated_models import GenerateTextResponse
 
 
 class TextService:

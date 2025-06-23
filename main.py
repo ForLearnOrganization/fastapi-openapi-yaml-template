@@ -16,7 +16,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
 
 from app.core.config import settings
-from app.generated.generated_router import main_router as api_router
+from app.generated.generated_router import main_router as api_router, legacy_router
 from app.models import GenerateTextRequest, GenerateTextResponse
 from app.services.text_service import TextService
 
@@ -73,6 +73,9 @@ def create_application() -> FastAPI:
 
     # APIルーターを含める
     app.include_router(api_router, prefix=settings.api_v1_prefix)
+    
+    # Legacy router (no prefix for backward compatibility)
+    app.include_router(legacy_router)
 
     # カスタムOpenAPIスキーマを設定
     app.openapi = lambda: create_custom_openapi(app)

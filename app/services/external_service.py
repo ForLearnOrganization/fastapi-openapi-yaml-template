@@ -4,7 +4,7 @@ import asyncio
 import random
 from typing import Optional
 
-from app.models import FactResponse, QuoteResponse, WeatherResponse
+from app.generated.generated_models import FactResponse, QuoteResponse, WeatherResponse
 
 
 class ExternalAPIService:
@@ -153,11 +153,10 @@ class ExternalAPIService:
 
         return WeatherResponse(
             city=city.title(),
-            country=country_code.upper() if country_code else "Unknown",
             temperature=round(temperature, 1),
-            description=description,
             humidity=random.randint(30, 90),
-            wind_speed=round(random.uniform(0, 15), 1),
+            description=description,
+            is_mock=True,
         )
 
     async def get_random_quote(self) -> QuoteResponse:
