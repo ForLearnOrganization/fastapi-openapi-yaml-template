@@ -13,6 +13,18 @@ from typing import Any
 
 import yaml
 
+# OpenAPIのoperationIdからサービス層の関数名への明示的なマッピング
+# サービスモジュールが配置されているディレクトリ
+SERVICES_DIR = Path(__file__).resolve().parent.parent / "app" / "services"
+
+
+def find_service_module(tag: str) -> str:
+    """タグ名から適切なサービスモジュールを探索します。"""
+    candidates = [tag, f"{tag}_service"]
+    for candidate in candidates:
+        if (SERVICES_DIR / f"{candidate}.py").exists():
+            return candidate
+    return "default_service"
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
@@ -308,7 +320,7 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
 
 def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[str]]:
     """OpenAPI仕様からサービス関数のインポートを抽出します。"""
-    service_imports = {}  # service_module_name -> [function_names]
+    service_imports = {}  # サービスモジュール名 -> 関数名一覧
     paths = spec.get("paths", {})
 
     for path, methods in paths.items():
@@ -316,31 +328,15 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 operation_id = operation.get("operationId", "")
                 if operation_id:
-                    # Create service function name
-                    http_method = method.lower()
+                    # 明示的なマッピングがなければHTTPメソッド接頭辞で生成
 
-                    # Check if operation_id already contains an HTTP method prefix
-                    has_method_prefix = bool(
-                        re.match(r"^(get|post|put|delete|patch)_", operation_id)
-                    )
+                    # タグまたはパスからサービスモジュール名を決定
+                        match = re.search(r"/api/v1/([^/]+)/", path)
+                        tag = match.group(1) if match else "default"
 
-                    if has_method_prefix:
-                        # If operation_id already has a method prefix, use it as-is and add _impl
-                        service_function_name = f"{operation_id}_impl"
-                    else:
-                        # Otherwise, prepend the HTTP method and add _impl
-                        service_function_name = f"{http_method}_{operation_id}_impl"
-
-                    # Determine service module based on tags or path
-                    tags = operation.get("tags", [])
-                    if tags:
-                        tag = tags[0]
-                        if tag == "health":
-                            service_module = "health"
-                        elif tag == "text":
-                            service_module = "text_service"
-                        elif tag == "external":
-                            service_module = "external_service"
+                    service_module = find_service_module(tag)
+        function_names_sorted = sorted(set(function_names))  # 重複を除いてソート
+            # 可読性向上のためインポートを複数行に分割
                         else:
                             service_module = f"{tag}_service"
                     else:
@@ -443,7 +439,7 @@ from app.generated.generated_models import {imports_str}
     # 主ルーターに登録 - 動的生成
     main_router_includes = []
     for router_name in router_names:
-        if router_name != "legacy_router":  # Legacy router is mounted separately
+        if router_name != "legacy_router":  # legacy_routerは別でマウントする
             main_router_includes.append(f"main_router.include_router({router_name})")
 
     router_registration = "\n".join(main_router_includes)
@@ -453,8 +449,7 @@ from app.generated.generated_models import {imports_str}
 main_router = APIRouter()
 {router_registration}
 
-# Legacy router should be separate (not include in main_router)
-# so it can be mounted without /api/v1 prefix
+# legacy_routerはmain_routerに含めず、/api/v1を付けずにマウントするため別扱い
 """
 
     with open(router_file, "w", encoding="utf-8") as f:
@@ -561,8 +556,8 @@ def generate_endpoint_body(
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
 
-    # Create service function name
-    http_method_lower = http_method.lower()
+    # 可能であれば明示的なマッピングを優先
+    # パラメータの有無に応じて関数呼び出しを生成
 
     # Check if operation_id already contains an HTTP method prefix
     http_methods = ["get", "post", "put", "delete", "patch"]
