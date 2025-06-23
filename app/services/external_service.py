@@ -105,8 +105,7 @@ class ExternalAPIService:
         self.mock_jokes = [
             {
                 "joke": (
-                    "Why do programmers prefer dark mode? "
-                    "Because light attracts bugs!"
+                    "Why do programmers prefer dark mode? Because light attracts bugs!"
                 ),
                 "category": "programming",
             },
