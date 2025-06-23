@@ -27,8 +27,8 @@ from app.services.external_service import (
     post_external_weather,
 )
 from app.services.health import (
-    get_health,
-    get_health_detailed,
+    get_detailed_health_check,
+    get_health_check,
 )
 from app.services.text_service import (
     post_generate,
@@ -46,13 +46,13 @@ legacy_router = APIRouter(tags=["text"])
 @health_router.get("/", summary="基本ヘルスチェック")
 async def health_check() -> HealthResponse:
     """APIサーバーの基本動作確認"""
-    return await get_health()
+    return await get_health_check()
 
 
 @health_router.get("/detailed", summary="詳細ヘルスチェック")
 async def detailed_health_check() -> DetailedHealthResponse:
     """システムの詳細情報とヘルス状態"""
-    return await get_health_detailed()
+    return await get_detailed_health_check()
 
 
 @text_router.post("/generate", summary="テキスト生成")
