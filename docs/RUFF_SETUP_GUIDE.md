@@ -104,3 +104,19 @@ ignore = ["B904"]
 quote-style = "double"
 indent-style = "space"
 ```
+
+### Ruff vs Black + isort の選択理由
+
+**🚀 Ruffを選択した理由:**
+
+1. **パフォーマンス**: Rustで書かれており、Black+isortより10-100倍高速
+2. **統合性**: linting（flake8相当）とformatting（black相当）を1つのツールで提供
+3. **設定簡素化**: pyproject.toml内の単一設定で完了
+4. **互換性**: BlackやisortとほぼUI・フォーマット結果
+5. **メンテナンス**: アクティブな開発と定期的な更新
+
+**従来のBlack + isortからの移行メリット:**
+- 設定ファイルの簡素化（pyproject.tomlの[tool.ruff]セクションのみ）
+- ビルド・CI時間の短縮
+- VSCodeでの応答性向上
+- 依存関係の削減

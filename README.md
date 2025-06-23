@@ -28,7 +28,7 @@ cd localllm-fastapi
 poetry install
 
 # 開発サーバー起動
-poetry run uvicorn main:app --reload
+make start
 ```
 
 ### 2. アクセス
@@ -43,22 +43,19 @@ poetry run uvicorn main:app --reload
 
 ```bash
 # YAML-First: バックエンド成果物の生成（Pydanticモデル、FastAPIルーター、ドキュメント）
-python3 scripts/generate_backend.py
-
-# YAML-First: 完全な統合生成（推奨）
-python3 scripts/generate_yaml_first.py
+make generate backend
 
 # 新しいエンドポイント追加フロー:
 # 1. source/openapi.yaml を編集
-# 2. python3 scripts/generate_backend.py を実行
-# 3. app/generated/generated_router.py の TODO部分を実装
+# 2. make generate all を実行
+# 3. app/generated/generated_router.py から呼び出している_implのサフィックスがついた関数に処理を書く
 ```
 
 ### フロントエンド開発者
 
 ```bash
 # TypeScript型定義とAPIクライアントの生成
-python3 scripts/generate_frontend.py
+make generate frontend
 
 # Next.jsプロジェクトで型安全なAPI呼び出しが可能
 ```
@@ -66,11 +63,9 @@ python3 scripts/generate_frontend.py
 ### プロジェクト全体
 
 ```bash
-# すべてを一括生成（バックエンド + フロントエンド）
-python3 scripts/generate_all.py
+# すべてを一括生成（バックエンド + フロントエンド + docs）
+make generate all
 
-# 完全なYAML-firstワークフロー
-python3 scripts/generate_yaml_first.py
 ```
 
 ### インストール
@@ -89,7 +84,7 @@ python3 scripts/generate_yaml_first.py
 
 3. **APIサーバの起動**
    ```bash
-   poetry run uvicorn main:app --reload
+   make start
    ```
 
 4. **アプリケーションへのアクセス**
@@ -390,10 +385,10 @@ poetry run mypy app/
 ### テスト実行
 ```bash
 # 全テスト実行
-poetry run pytest
+make test
 
 # カバレッジ付きテスト
-poetry run pytest --cov=app tests/
+make test --cov
 ```
 
 ## 🚀 本番デプロイメント
