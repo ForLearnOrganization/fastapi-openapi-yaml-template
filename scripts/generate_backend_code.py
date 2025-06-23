@@ -13,6 +13,19 @@ from typing import Any
 
 import yaml
 
+# Explicit mapping from OpenAPI operationId to service layer function names
+SERVICE_FUNCTION_MAP = {
+    "health_check": "get_health",
+    "detailed_health_check": "get_health_detailed",
+    "generate_text": "post_text_generate",
+    "echo_text": "post_text_echo",
+    "generate_text_legacy": "post_generate",
+    "get_weather": "post_external_weather",
+    "get_random_quote": "get_external_quote",
+    "get_random_fact": "get_external_fact",
+    "get_programming_joke": "get_external_joke",
+}
+
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
@@ -316,21 +329,22 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 operation_id = operation.get("operationId", "")
                 if operation_id:
-                    # Create service function name
                     http_method = method.lower()
 
-                    # Check if operation_id already contains an HTTP method prefix
-                    http_methods = ["get", "post", "put", "delete", "patch"]
-                    has_method_prefix = any(
-                        operation_id.startswith(f"{m}_") for m in http_methods
-                    )
+                    # Use explicit mapping when available
+                    service_function_name = SERVICE_FUNCTION_MAP.get(operation_id)
 
-                    if has_method_prefix:
-                        # If operation_id already has a method prefix, use it as-is
-                        service_function_name = operation_id
-                    else:
-                        # Otherwise, prepend the HTTP method
-                        service_function_name = f"{http_method}_{operation_id}"
+                    if not service_function_name:
+                        # Fallback to HTTP method prefix logic
+                        http_methods = ["get", "post", "put", "delete", "patch"]
+                        has_method_prefix = any(
+                            operation_id.startswith(f"{m}_") for m in http_methods
+                        )
+
+                        if has_method_prefix:
+                            service_function_name = operation_id
+                        else:
+                            service_function_name = f"{http_method}_{operation_id}"
 
                     # Determine service module based on tags or path
                     tags = operation.get("tags", [])
@@ -562,19 +576,19 @@ def generate_endpoint_body(
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
 
-    # Create service function name
     http_method_lower = http_method.lower()
 
-    # Check if operation_id already contains an HTTP method prefix
-    http_methods = ["get", "post", "put", "delete", "patch"]
-    has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
+    # Prefer explicit mapping
+    service_function_name = SERVICE_FUNCTION_MAP.get(operation_id)
 
-    if has_method_prefix:
-        # If operation_id already has a method prefix, use it as-is
-        service_function_name = operation_id
-    else:
-        # Otherwise, prepend the HTTP method
-        service_function_name = f"{http_method_lower}_{operation_id}"
+    if not service_function_name:
+        http_methods = ["get", "post", "put", "delete", "patch"]
+        has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
+
+        if has_method_prefix:
+            service_function_name = operation_id
+        else:
+            service_function_name = f"{http_method_lower}_{operation_id}"
 
     # Generate function call with or without parameters
     if request_param:
