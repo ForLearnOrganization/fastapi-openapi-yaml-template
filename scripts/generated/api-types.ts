@@ -1,5 +1,5 @@
 // OpenAPI YAML仕様から自動生成されたTypeScript型定義
-// 生成日時: 2025-06-23 07:03:56
+// 生成日時: 2025-06-23 07:19:43
 // ソース: source/openapi.yaml
 //
 // 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
