@@ -195,7 +195,7 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
             if len(f"    {prop_name}: {field_type} = Field({params_str})") > 80:
                 # バックスラッシュを含む文字列を変数に分離
                 multiline_params = ",\n        ".join(field_params)
-                field_def = f" = Field(\n        {multiline_params}\n    )"
+                field_def = f" = Field(\n            {multiline_params}\n        )"
             else:
                 field_def = f" = Field({params_str})"
 
@@ -320,17 +320,16 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
                     http_method = method.lower()
 
                     # Check if operation_id already contains an HTTP method prefix
-                    http_methods = ["get", "post", "put", "delete", "patch"]
-                    has_method_prefix = any(
-                        operation_id.startswith(f"{m}_") for m in http_methods
+                    has_method_prefix = bool(
+                        re.match(r"^(get|post|put|delete|patch)_", operation_id)
                     )
 
                     if has_method_prefix:
-                        # If operation_id already has a method prefix, use it as-is
-                        service_function_name = operation_id
+                        # If operation_id already has a method prefix, use it as-is and add _impl
+                        service_function_name = f"{operation_id}_impl"
                     else:
-                        # Otherwise, prepend the HTTP method
-                        service_function_name = f"{http_method}_{operation_id}"
+                        # Otherwise, prepend the HTTP method and add _impl
+                        service_function_name = f"{http_method}_{operation_id}_impl"
 
                     # Determine service module based on tags or path
                     tags = operation.get("tags", [])
@@ -523,7 +522,7 @@ def generate_endpoint_implementation(
         response_type = ref.split("/")[-1]
 
     # パスパラメータの処理
-    path_params = re.findall(r"\\{([^}]+)\\}", path)
+    path_params = re.findall(r"\{([^}]+)\}", path)
     path_param_str = ""
     if path_params:
         path_param_str = ", " + ", ".join([f"{param}: str" for param in path_params])
@@ -578,9 +577,9 @@ def generate_endpoint_body(
 
     # Generate function call with or without parameters
     if request_param:
-        return f"    return await {service_function_name}(request)"
+        return f"    return await {service_function_name}_impl(request)"
     else:
-        return f"    return await {service_function_name}()"
+        return f"    return await {service_function_name}_impl()"
 
 
 def main():
