@@ -86,19 +86,17 @@ python3 scripts/generate_yaml_first.py
    poetry install
    ```
 
-3. **開発環境の設定**
-   ```bash
-   poetry shell  # 仮想環境をアクティベート
-   ```
 
-4. **APIサーバの起動**
+3. **APIサーバの起動**
    ```bash
    poetry run uvicorn main:app --reload
    ```
 
-5. **アプリケーションへのアクセス**
+4. **アプリケーションへのアクセス**
    - **APIドキュメント**: http://localhost:8000/docs
+     - APIを叩いて確認したい人向けのUI
    - **代替ドキュメント**: http://localhost:8000/redoc
+     - API仕様を読む人向けのUI
    - **ルートページ**: http://localhost:8000/
 
 ## 🛠️ 開発環境設定
@@ -112,7 +110,7 @@ python3 scripts/generate_yaml_first.py
 
 詳細な設定方法は → [📖 VS Code設定ガイド](docs/VSCODE_SETUP_GUIDE.md)
 
-### 初回セットアップ手順
+
 ```bash
 # 1. 環境変数ファイルの準備
 cp .env.example .env.local
@@ -314,38 +312,11 @@ localllm-fastapi/
 - VS Code設定でFlake8を無効化してRuffのみ使用
 
 #### 詳細設定ガイド
-- [docs/RUFF_SETUP_GUIDE.md](docs/RUFF_SETUP_GUIDE.md) - Ruff設定の詳細説明
+- [docs/RUFF_SETUP_GUIDE.md](docs/RUFF_SETUP_GUIDE.md) - Ruff設定の詳細/選定理由記載
 - 保存時自動フォーマットの設定方法
 - Flake8エラー解消方法
 
-## 📁 プロジェクト構造
 
-```
-localllm-fastapi/
-├── .vscode/                    # VSCode設定
-│   ├── settings.json          # エディタ設定（Ruff自動フォーマット）
-│   └── extensions.json        # 推奨拡張機能
-├── app/                       # アプリケーションソース
-│   ├── api/v1/endpoints/      # APIルートハンドラー
-│   ├── api/endpoint_registry.py # エンドポイント設定レジストリ
-│   ├── core/                  # 設定とコア機能
-│   ├── models/               # Pydanticスキーマ
-│   ├── services/             # ビジネスロジック
-│   └── utils/                # ユーティリティ関数
-├── scripts/                   # 🔧 Python生成スクリプト
-│   ├── generate_all.py        # 全体統合生成
-│   ├── generate_backend.py    # バックエンド専用生成
-│   ├── generate_frontend.py   # フロントエンド専用生成
-│   ├── generate_client_types.py # TypeScript型生成
-│   └── generate_docs.py       # HTMLドキュメント生成
-├── docs/                      # 📁 ドキュメント管理
-│   ├── generated/            # 🤖 自動生成: OpenAPIスキーマ
-│   └── static/               # 🤖 自動生成: 静的HTMLドキュメント
-├── generated/                 # 🤖 自動生成: TypeScript型定義
-├── source/                    # 📁 手動管理: ソース用YAML等（将来用）
-├── config.yaml               # アプリケーション設定
-└── main.py                   # アプリケーションエントリーポイント
-```
 
 ## 🔧 APIエンドポイント
 
@@ -383,28 +354,6 @@ curl -X POST "http://localhost:8000/api/v1/external/weather" \
      -d '{"location": "Tokyo"}'
 ```
 
-### Next.jsでの型安全なAPI呼び出し
-
-```typescript
-import { GenerateTextRequest, apiMethods } from './generated/api-types';
-
-const MyComponent = () => {
-  const handleGenerateText = async () => {
-    try {
-      const response = await apiMethods.generateText({
-        prompt: 'Hello world',
-        max_length: 100
-      });
-      console.log(response.generated_text);
-    } catch (error) {
-      console.error('API呼び出しエラー:', error);
-    }
-  };
-
-  return <button onClick={handleGenerateText}>テキスト生成</button>;
-};
-```
-
 ## 🔧 開発ツール設定
 
 ### VSCode自動フォーマット設定
@@ -415,21 +364,6 @@ const MyComponent = () => {
 - **インポート自動整理**: isort互換の自動インポート整理
 - **構文エラー検出**: リアルタイムでのコード検証
 
-### Ruff vs Black + isort の選択理由
-
-**🚀 Ruffを選択した理由:**
-
-1. **パフォーマンス**: Rustで書かれており、Black+isortより10-100倍高速
-2. **統合性**: linting（flake8相当）とformatting（black相当）を1つのツールで提供
-3. **設定簡素化**: pyproject.toml内の単一設定で完了
-4. **互換性**: BlackやisortとほぼUI・フォーマット結果
-5. **メンテナンス**: アクティブな開発と定期的な更新
-
-**従来のBlack + isortからの移行メリット:**
-- 設定ファイルの簡素化（pyproject.tomlの[tool.ruff]セクションのみ）
-- ビルド・CI時間の短縮
-- VSCodeでの応答性向上
-- 依存関係の削減
 
 ## その他の便利なコマンド
 
