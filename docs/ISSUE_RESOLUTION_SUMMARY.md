@@ -31,7 +31,7 @@ find .cache/pycache -name "*.pyc" | wc -l
 
 **改善されたワークフロー**:
 ```bash
-poetry run python3 scripts/generate_from_yaml.py
+poetry run python3 scripts/generate_backend_code.py
 # 🚀 コード生成
 # 🎨 生成されたファイルをフォーマット中...
 # ✨ フォーマット完了

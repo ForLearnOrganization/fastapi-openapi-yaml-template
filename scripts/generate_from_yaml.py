@@ -235,35 +235,39 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
 def extract_tags_from_spec(spec: dict[str, Any]) -> list[dict[str, str]]:
     """OpenAPI仕様からタグ情報を抽出します。"""
     tags = spec.get("tags", [])
-    return [{"name": tag["name"], "description": tag.get("description", "")} for tag in tags]
+    return [
+        {"name": tag["name"], "description": tag.get("description", "")} for tag in tags
+    ]
 
 
 def extract_router_prefixes_from_paths(spec: dict[str, Any]) -> dict[str, str]:
     """パスから各タグのプレフィックスを抽出します。"""
     paths = spec.get("paths", {})
     tag_prefixes = {}
-    
+
     for path, methods in paths.items():
         for method, operation in methods.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 tags = operation.get("tags", [])
                 if tags:
                     tag_name = tags[0]  # 最初のタグを使用
-                    
+
                     # レガシーパスは特別扱い
                     if path.startswith("/generate"):
                         continue  # レガシーパスはプレフィックス抽出をスキップ
-                    
+
                     # パスからプレフィックスを推測
                     if path.startswith("/api/v1/"):
                         # /api/v1/health/ -> /health
                         # /api/v1/text/generate -> /text
-                        path_parts = path.split("/")[3:]  # ['health', ''] または ['text', 'generate']
+                        path_parts = path.split("/")[
+                            3:
+                        ]  # ['health', ''] または ['text', 'generate']
                         if path_parts and path_parts[0]:
                             prefix = f"/{path_parts[0]}"
                             if tag_name not in tag_prefixes:
                                 tag_prefixes[tag_name] = prefix
-    
+
     return tag_prefixes
 
 
@@ -271,20 +275,22 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
     """タグ情報から動的にルーター定義を生成します。"""
     tags = extract_tags_from_spec(spec)
     tag_prefixes = extract_router_prefixes_from_paths(spec)
-    
+
     router_definitions = []
     router_names = []
-    
+
     for tag in tags:
         tag_name = tag["name"]
         prefix = tag_prefixes.get(tag_name, f"/{tag_name}")
-        
+
         router_var_name = f"{tag_name}_router"
         router_names.append(router_var_name)
-        
-        router_def = f'{router_var_name} = APIRouter(prefix="{prefix}", tags=["{tag_name}"])'
+
+        router_def = (
+            f'{router_var_name} = APIRouter(prefix="{prefix}", tags=["{tag_name}"])'
+        )
         router_definitions.append(router_def)
-    
+
     # レガシールーター（プレフィックスなし）の処理
     legacy_needed = False
     paths = spec.get("paths", {})
@@ -292,11 +298,11 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
         if not path.startswith("/api/v1/"):
             legacy_needed = True
             break
-    
+
     if legacy_needed:
         router_definitions.append('legacy_router = APIRouter(tags=["text"])')
         router_names.append("legacy_router")
-    
+
     return "\n".join(router_definitions), router_names
 
 
@@ -304,7 +310,7 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
     """OpenAPI仕様からサービス関数のインポートを抽出します。"""
     service_imports = {}  # service_module_name -> [function_names]
     paths = spec.get("paths", {})
-    
+
     for path, methods in paths.items():
         for method, operation in methods.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
@@ -312,18 +318,20 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
                 if operation_id:
                     # Create service function name
                     http_method = method.lower()
-                    
+
                     # Check if operation_id already contains an HTTP method prefix
                     http_methods = ["get", "post", "put", "delete", "patch"]
-                    has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
-                    
+                    has_method_prefix = any(
+                        operation_id.startswith(f"{m}_") for m in http_methods
+                    )
+
                     if has_method_prefix:
                         # If operation_id already has a method prefix, use it as-is
                         service_function_name = operation_id
                     else:
                         # Otherwise, prepend the HTTP method
                         service_function_name = f"{http_method}_{operation_id}"
-                    
+
                     # Determine service module based on tags or path
                     tags = operation.get("tags", [])
                     if tags:
@@ -346,28 +354,34 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
                             service_module = "external_service"
                         else:
                             service_module = "default_service"
-                    
+
                     if service_module not in service_imports:
                         service_imports[service_module] = []
                     service_imports[service_module].append(service_function_name)
-    
+
     return service_imports
 
 
 def generate_service_imports(service_imports: dict[str, list[str]]) -> str:
     """サービスインポート文を生成します。"""
     import_lines = []
-    
+
     for service_module, function_names in service_imports.items():
-        function_names_sorted = sorted(set(function_names))  # Remove duplicates and sort
+        function_names_sorted = sorted(
+            set(function_names)
+        )  # Remove duplicates and sort
         if len(function_names_sorted) == 1:
-            import_line = f"from app.services.{service_module} import {function_names_sorted[0]}"
+            import_line = (
+                f"from app.services.{service_module} import {function_names_sorted[0]}"
+            )
         else:
             # Multi-line import for better readability
             functions_str = ",\n    ".join(function_names_sorted)
-            import_line = f"from app.services.{service_module} import (\n    {functions_str},\n)"
+            import_line = (
+                f"from app.services.{service_module} import (\n    {functions_str},\n)"
+            )
         import_lines.append(import_line)
-    
+
     return "\n".join(import_lines)
 
 
@@ -432,9 +446,9 @@ from app.generated.generated_models import {imports_str}
     for router_name in router_names:
         if router_name != "legacy_router":  # Legacy router is mounted separately
             main_router_includes.append(f"main_router.include_router({router_name})")
-    
+
     router_registration = "\n".join(main_router_includes)
-    
+
     content += f"""
 # メインルーターを作成
 main_router = APIRouter()
@@ -469,7 +483,7 @@ def generate_endpoint_implementation(
     if tags:
         tag = tags[0]
         tag_prefixes = extract_router_prefixes_from_paths(spec)
-        
+
         if tag in tag_prefixes:
             if path.startswith("/generate"):
                 # レガシーエンドポイントの特別処理
@@ -532,23 +546,29 @@ def generate_endpoint_implementation(
         docstring = f'    """{description}"""'
 
     # 実装本体を生成（HTTPメソッドも渡す）
-    body = generate_endpoint_body(operation_id, path, request_param, response_type, method)
+    body = generate_endpoint_body(
+        operation_id, path, request_param, response_type, method
+    )
 
     return f"{decorator}\n{function_def}\n{docstring}\n{body}"
 
 
 def generate_endpoint_body(
-    operation_id: str, path: str, request_param: str, response_type: str, http_method: str
+    operation_id: str,
+    path: str,
+    request_param: str,
+    response_type: str,
+    http_method: str,
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
-    
+
     # Create service function name
     http_method_lower = http_method.lower()
-    
+
     # Check if operation_id already contains an HTTP method prefix
     http_methods = ["get", "post", "put", "delete", "patch"]
     has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
-    
+
     if has_method_prefix:
         # If operation_id already has a method prefix, use it as-is
         service_function_name = operation_id
