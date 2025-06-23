@@ -26,19 +26,19 @@ def format_generated_files(output_dir: Path) -> None:
         python_files = list(output_dir.glob("*.py"))
         if python_files:
             print("🎨 生成されたファイルをフォーマット中...")
-            # poetry環境内でruffを実行
+            # 直接ruffを実行（poetry環境に依存しない）
             subprocess.run([
-                "poetry", "run", "ruff", "format", *[str(f) for f in python_files]
+                "ruff", "format", *[str(f) for f in python_files]
             ], check=True, cwd=output_dir.parent.parent)
             # 次に修正可能なエラーをfix（失敗しても継続）
             subprocess.run([
-                "poetry", "run", "ruff", "check", "--fix", *[str(f) for f in python_files]
+                "ruff", "check", "--fix", *[str(f) for f in python_files]
             ], cwd=output_dir.parent.parent)
             print("✨ フォーマット完了")
     except subprocess.CalledProcessError as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
     except FileNotFoundError:
-        print("⚠️  poetryまたはruffが見つかりません。手動でフォーマットしてください")
+        print("⚠️  ruffが見つかりません。手動でフォーマットしてください")
 
 
 def generate_pydantic_models(spec: dict[str, Any], output_dir: str) -> None:
