@@ -12,3 +12,6 @@ lint:
 
 test:
 	poetry run pytest
+
+generate all:
+	python3 scripts/generate_all.py
