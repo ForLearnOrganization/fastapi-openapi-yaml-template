@@ -27,18 +27,40 @@ def format_generated_python_files() -> None:
     try:
         # app/generated ディレクトリにPythonファイルがあるかチェック
         generated_dir = Path("app/generated")
-        if generated_dir.exists():
-            python_files = list(generated_dir.glob("*.py"))
-            if python_files:
-                print("🎨 生成されたPythonファイルをフォーマット中...")
-                subprocess.run([
-                    "poetry", "run", "ruff", "format", *[str(f) for f in python_files]
-                ], check=True)
-                print("✨ Pythonファイルのフォーマット完了")
-    except subprocess.CalledProcessError as e:
+        if not generated_dir.exists():
+            return
+            
+        python_files = list(generated_dir.glob("*.py"))
+        if not python_files:
+            return
+            
+        print("🎨 生成されたPythonファイルをフォーマット中...")
+        
+        # まずpoetry run ruffを試す
+        try:
+            subprocess.run([
+                sys.executable, "-m", "poetry", "run", "ruff", "format", 
+                *[str(f) for f in python_files]
+            ], check=True, capture_output=True)
+            print("✨ Pythonファイルのフォーマット完了（poetry経由）")
+            return
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+        
+        # 次に直接ruffを試す  
+        try:
+            subprocess.run([
+                "ruff", "format", *[str(f) for f in python_files]
+            ], check=True, capture_output=True)
+            print("✨ Pythonファイルのフォーマット完了（直接実行）")
+            return
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+            
+        print("⚠️  ruffが見つかりません。基本的なフォーマットをスキップします...")
+        
+    except Exception as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
-    except FileNotFoundError:
-        print("⚠️  ruffが見つかりません。手動でフォーマットしてください")
 
 
 def convert_openapi_type_to_typescript(prop_def: dict[str, Any]) -> str:
