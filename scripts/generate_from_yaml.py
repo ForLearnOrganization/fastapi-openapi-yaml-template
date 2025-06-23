@@ -29,17 +29,22 @@ def format_generated_files(output_dir: Path) -> None:
             
         print("🎨 生成されたファイルをフォーマット中...")
         
+        # PYTHONPYCACHEPREFIX環境変数を設定
+        import os
+        env = os.environ.copy()
+        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
+        
         # まずpoetry run ruffを試す
         try:
             subprocess.run([
                 sys.executable, "-m", "poetry", "run", "ruff", "format", 
                 *[str(f) for f in python_files]
-            ], check=True, cwd=output_dir.parent.parent, capture_output=True)
+            ], check=True, cwd=output_dir.parent.parent, capture_output=True, env=env)
             
             subprocess.run([
                 sys.executable, "-m", "poetry", "run", "ruff", "check", "--fix", 
                 *[str(f) for f in python_files]
-            ], check=False, cwd=output_dir.parent.parent, capture_output=True)
+            ], check=False, cwd=output_dir.parent.parent, capture_output=True, env=env)
             
             print("✨ フォーマット完了（poetry経由）")
             return
@@ -50,11 +55,11 @@ def format_generated_files(output_dir: Path) -> None:
         try:
             subprocess.run([
                 "ruff", "format", *[str(f) for f in python_files]
-            ], check=True, cwd=output_dir.parent.parent, capture_output=True)
+            ], check=True, cwd=output_dir.parent.parent, capture_output=True, env=env)
             
             subprocess.run([
                 "ruff", "check", "--fix", *[str(f) for f in python_files]
-            ], check=False, cwd=output_dir.parent.parent, capture_output=True)
+            ], check=False, cwd=output_dir.parent.parent, capture_output=True, env=env)
             
             print("✨ フォーマット完了（直接実行）")
             return

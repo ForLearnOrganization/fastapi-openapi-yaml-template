@@ -36,12 +36,17 @@ def format_generated_python_files() -> None:
             
         print("🎨 生成されたPythonファイルをフォーマット中...")
         
+        # PYTHONPYCACHEPREFIX環境変数を設定
+        import os
+        env = os.environ.copy()
+        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
+        
         # まずpoetry run ruffを試す
         try:
             subprocess.run([
                 sys.executable, "-m", "poetry", "run", "ruff", "format", 
                 *[str(f) for f in python_files]
-            ], check=True, capture_output=True)
+            ], check=True, capture_output=True, env=env)
             print("✨ Pythonファイルのフォーマット完了（poetry経由）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -51,7 +56,7 @@ def format_generated_python_files() -> None:
         try:
             subprocess.run([
                 "ruff", "format", *[str(f) for f in python_files]
-            ], check=True, capture_output=True)
+            ], check=True, capture_output=True, env=env)
             print("✨ Pythonファイルのフォーマット完了（直接実行）")
             return
         except (subprocess.CalledProcessError, FileNotFoundError):

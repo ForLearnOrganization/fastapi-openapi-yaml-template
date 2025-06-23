@@ -6,6 +6,7 @@ APIエンドポイント、Pydanticモデル、ドキュメントを生成しま
 フロントエンド用の型定義は含まれません。
 """
 
+import os
 import subprocess
 import sys
 import traceback
@@ -16,6 +17,10 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
     """コマンドを実行し、結果を表示"""
     print(f"🚀 {description}...")
     try:
+        # PYTHONPYCACHEPREFIX環境変数を設定して__pycache__を統合
+        env = os.environ.copy()
+        env['PYTHONPYCACHEPREFIX'] = '.cache/pycache'
+        
         result = subprocess.run(
             command,
             shell=True,
@@ -23,6 +28,7 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
             capture_output=True,
             text=True,
             cwd=cwd,
+            env=env,
         )
         if result.stdout:
             print(result.stdout)

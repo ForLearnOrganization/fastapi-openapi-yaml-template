@@ -3,13 +3,31 @@
 ## ✅ キャッシュは正常に動作しています
 
 Python の `__pycache__` ディレクトリは正常に生成され、パフォーマンス向上に寄与しています。
-ただし、散在を防ぐため統合ディレクトリに集約されています。
+全ての生成スクリプト実行でも統合ディレクトリに集約されています。
 
 ## 📁 現在の設定
 
 ### 設定場所
 - **環境変数**: `.env.example` で `PYTHONPYCACHEPREFIX=.cache/pycache` 
 - **実際の生成先**: `.cache/pycache/` ディレクトリ
+- **スクリプト実行**: 全ての生成スクリプトで自動適用
+
+### ✨ 改善内容
+
+**統合前（散在）**:
+```
+scripts/__pycache__/
+app/__pycache__/
+app/api/__pycache__/
+app/models/__pycache__/
+```
+
+**統合後（集約）**:
+```
+.cache/pycache/
+├── (全モジュールのキャッシュファイル)
+└── (環境全体で一元管理)
+```
 
 ### キャッシュの確認方法
 
@@ -17,8 +35,8 @@ Python の `__pycache__` ディレクトリは正常に生成され、パフォ�
 # キャッシュが生成されているか確認
 find .cache/pycache -name "*.pyc" | head -10
 
-# アプリケーション実行でキャッシュ生成
-poetry run python3 -c "import app.core.config; print('Cache generated')"
+# 生成スクリプト実行でキャッシュ生成
+python3 scripts/generate_all.py
 
 # キャッシュファイル数をカウント
 find .cache/pycache -name "*.pyc" | wc -l
