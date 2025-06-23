@@ -1,8 +1,17 @@
 """Text generation service."""
 
 import random
+import re
+from datetime import datetime
 
-from app.generated.generated_models import GenerateTextResponse
+from fastapi import HTTPException
+
+from app.generated.generated_models import (
+    EchoTextRequest,
+    EchoTextResponse,
+    GenerateTextRequest,
+    GenerateTextResponse,
+)
 
 
 class TextService:
@@ -63,3 +72,78 @@ class TextService:
         return GenerateTextResponse(
             generated_text=generated_part, input_prompt=prompt, metadata=metadata
         )
+
+
+# Global service instance
+text_service = TextService()
+
+
+async def post_text_generate(request: GenerateTextRequest) -> GenerateTextResponse:
+    """テキスト生成エンドポイント用のサービス関数"""
+    try:
+        result = await text_service.generate_text(
+            prompt=request.prompt,
+            max_length=request.max_length or 100,
+            temperature=request.temperature or 0.7,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
+        )
+
+
+async def post_generate(request: GenerateTextRequest) -> GenerateTextResponse:
+    """後方互換性エンドポイント用のサービス関数"""
+    try:
+        result = await text_service.generate_text(
+            prompt=request.prompt,
+            max_length=request.max_length or 100,
+            temperature=request.temperature or 0.7,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
+        )
+
+
+async def post_text_echo(request: EchoTextRequest) -> EchoTextResponse:
+    """テキストエコーと分析エンドポイント用のサービス関数"""
+    # Simple text analysis
+    text = request.text
+    character_count = len(text)
+    word_count = len(text.split())
+
+    # Simple language detection (very basic)
+    if re.search(r"[ひらがなカタカナ漢字]", text):
+        language = "ja"
+    elif re.search(r"[a-zA-Z]", text):
+        language = "en"
+    else:
+        language = "unknown"
+
+    # Simple sentiment analysis (keyword based)
+    positive_words = ["good", "great", "excellent", "良い", "素晴らしい", "最高"]
+    negative_words = ["bad", "terrible", "awful", "悪い", "最悪", "ひどい"]
+
+    sentiment = "neutral"
+    for word in positive_words:
+        if word in text.lower():
+            sentiment = "positive"
+            break
+    for word in negative_words:
+        if word in text.lower():
+            sentiment = "negative"
+            break
+
+    return EchoTextResponse(
+        echo=text,
+        analysis={
+            "character_count": character_count,
+            "word_count": word_count,
+            "language": language,
+            "sentiment": sentiment,
+        },
+        timestamp=datetime.now(),
+    )

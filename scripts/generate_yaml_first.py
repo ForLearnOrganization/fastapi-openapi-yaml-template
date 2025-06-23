@@ -8,6 +8,7 @@ OpenAPI YAML-first 統合生成スクリプト
 import os
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 
@@ -35,6 +36,14 @@ def run_command(command: str, description: str, cwd: str = None) -> int:
         print(f"❌ エラーが発生しました: {e}")
         if e.stderr:
             print(f"エラー詳細: {e.stderr}")
+        # デバッグ用のトレースバック表示
+        print("🔍 詳細トレースバック:")
+        traceback.print_exc()
+        return 1
+    except Exception as e:
+        print(f"❌ 予期しないエラーが発生しました: {e}")
+        print("🔍 詳細トレースバック:")
+        traceback.print_exc()
         return 1
 
 
@@ -58,14 +67,14 @@ def main():
 
     steps = [
         (
-            "python3 scripts/generate_types_from_yaml.py",
+            f'"{sys.executable}" scripts/generate_types_from_yaml.py',
             "TypeScript型定義・OpenAPIファイル生成",
         ),
         (
-            "python3 scripts/generate_from_yaml.py",
+            f'"{sys.executable}" scripts/generate_from_yaml.py',
             "Pydanticモデル・FastAPIルーター生成",
         ),
-        ("python3 scripts/generate_docs.py", "HTMLドキュメント生成"),
+        (f'"{sys.executable}" scripts/generate_docs.py', "HTMLドキュメント生成"),
     ]
 
     for command, description in steps:
@@ -87,7 +96,7 @@ def main():
     print()
     print("🔄 開発フロー:")
     print("  1. 📝 source/openapi.yaml を編集（API仕様の更新）")
-    print("  2. 🚀 ./scripts/generate_yaml_first.sh を実行（全自動生成）")
+    print("  2. 🚀 python3 scripts/generate_yaml_first.py を実行（全自動生成）")
     print("  3. 🛠️ 必要に応じて生成されたスタブに実装を追加")
     print("  4. 🧪 開発サーバーでテスト: python3 main.py")
     print("  5. 📦 Next.jsで scripts/generated/api-types.ts を使用")

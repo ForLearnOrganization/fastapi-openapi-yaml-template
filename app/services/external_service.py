@@ -4,7 +4,15 @@ import asyncio
 import random
 from typing import Optional
 
-from app.generated.generated_models import FactResponse, QuoteResponse, WeatherResponse
+from fastapi import HTTPException
+
+from app.generated.generated_models import (
+    FactResponse,
+    JokeResponse,
+    QuoteResponse,
+    WeatherRequest,
+    WeatherResponse,
+)
 
 
 class ExternalAPIService:
@@ -187,3 +195,53 @@ class ExternalAPIService:
             "category": joke_data.get("category", "general"),
             "type": "programming_humor",
         }
+
+
+# Global service instance
+external_service = ExternalAPIService()
+
+
+async def post_external_weather(request: WeatherRequest) -> WeatherResponse:
+    """天気情報取得エンドポイント用のサービス関数"""
+    try:
+        result = await external_service.get_weather(city=request.city)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"天気情報の取得に失敗しました: {str(e)}"
+        )
+
+
+async def get_external_quote() -> QuoteResponse:
+    """名言取得エンドポイント用のサービス関数"""
+    try:
+        result = await external_service.get_random_quote()
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"名言の取得に失敗しました: {str(e)}"
+        )
+
+
+async def get_external_fact() -> FactResponse:
+    """豆知識取得エンドポイント用のサービス関数"""
+    try:
+        result = await external_service.get_random_fact()
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"豆知識の取得に失敗しました: {str(e)}"
+        )
+
+
+async def get_external_joke() -> JokeResponse:
+    """ジョーク取得エンドポイント用のサービス関数"""
+    try:
+        joke_data = await external_service.get_random_joke()
+        return JokeResponse(
+            joke=joke_data["joke"], type=joke_data.get("category", "programming")
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"ジョークの取得に失敗しました: {str(e)}"
+        )

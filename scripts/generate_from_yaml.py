@@ -258,17 +258,18 @@ OpenAPI YAML仕様から自動生成されたFastAPIルーター
 手動で編集しないでください。source/openapi.yamlを編集してから再生成してください。
 """
 
-from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 # ruff: noqa: F401
 from app.generated.generated_models import {imports_str}
-from app.services.text_service import TextService
-from app.services.external_service import ExternalAPIService
-
-# サービスインスタンス
-text_service = TextService()
-external_service = ExternalAPIService()
+from app.services.external_service import (
+    get_external_fact,
+    get_external_joke,
+    get_external_quote,
+    post_external_weather,
+)
+from app.services.health import get_health, get_health_detailed
+from app.services.text_service import post_generate, post_text_echo, post_text_generate
 
 # タグ別にルーターを分割（prefixは相対パスのみ、main.pyで/api/v1が追加される）
 health_router = APIRouter(prefix="/health", tags=["health"])
@@ -403,148 +404,24 @@ def generate_endpoint_body(
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
 
-    # Health check endpoints
-    if operation_id == "health_check":
-        return """    from datetime import datetime
-    return HealthResponse(status="healthy", timestamp=datetime.now())"""
+    # Create service function mapping based on operation_id and path
+    service_function_map = {
+        "health_check": "return await get_health()",
+        "detailed_health_check": "return await get_health_detailed()",
+        "generate_text": "return await post_text_generate(request)" if request_param else "return await post_text_generate()",
+        "generate_text_legacy": "return await post_generate(request)" if request_param else "return await post_generate()",
+        "echo_text": "return await post_text_echo(request)" if request_param else "return await post_text_echo()",
+        "get_weather": "return await post_external_weather(request)" if request_param else "return await post_external_weather()",
+        "get_random_quote": "return await get_external_quote()",
+        "get_random_fact": "return await get_external_fact()",
+        "get_programming_joke": "return await get_external_joke()",
+    }
 
-    elif operation_id == "detailed_health_check":
-        return """    from datetime import datetime
-    import platform
-    import sys
-    import time
-
-    start_time = getattr(detailed_health_check, 'start_time', time.time())
-    if not hasattr(detailed_health_check, 'start_time'):
-        detailed_health_check.start_time = start_time
-
-    return DetailedHealthResponse(
-        status="healthy",
-        timestamp=datetime.now(),
-        system_info={
-            "python_version": sys.version,
-            "platform": platform.platform(),
-            "memory_usage": "not_available",  # MB (psutil not installed)
-            "uptime": time.time() - start_time
-        },
-        services={
-            "database": "not_configured",
-            "cache": "not_configured",
-            "external_apis": "mock_mode"
-        }
-    )"""
-
-    # Text generation endpoints
-    elif operation_id == "generate_text":
-        return """    try:
-        result = await text_service.generate_text(
-            prompt=request.prompt,
-            max_length=request.max_length or 100,
-            temperature=request.temperature or 0.7,
-        )
-        return result
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
-        )"""
-
-    elif operation_id == "generate_text_legacy":
-        return """    try:
-        result = await text_service.generate_text(
-            prompt=request.prompt,
-            max_length=request.max_length or 100,
-            temperature=request.temperature or 0.7,
-        )
-        return result
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"テキスト生成に失敗しました: {str(e)}"
-        )"""
-
-    elif operation_id == "echo_text":
-        return """    from datetime import datetime
-    import re
-
-    # Simple text analysis
-    text = request.text
-    character_count = len(text)
-    word_count = len(text.split())
-
-    # Simple language detection (very basic)
-    if re.search(r'[ひらがなカタカナ漢字]', text):
-        language = "ja"
-    elif re.search(r'[a-zA-Z]', text):
-        language = "en"
+    # Return the service function call if mapped, otherwise default
+    if operation_id in service_function_map:
+        return f"    {service_function_map[operation_id]}"
     else:
-        language = "unknown"
-
-    # Simple sentiment analysis (keyword based)
-    positive_words = ['good', 'great', 'excellent', '良い', '素晴らしい', '最高']
-    negative_words = ['bad', 'terrible', 'awful', '悪い', '最悪', 'ひどい']
-
-    sentiment = "neutral"
-    for word in positive_words:
-        if word in text.lower():
-            sentiment = "positive"
-            break
-    for word in negative_words:
-        if word in text.lower():
-            sentiment = "negative"
-            break
-
-    return EchoTextResponse(
-        echo=text,
-        analysis={
-            "character_count": character_count,
-            "word_count": word_count,
-            "language": language,
-            "sentiment": sentiment
-        },
-        timestamp=datetime.now()
-    )"""
-
-    # External API endpoints
-    elif operation_id == "get_weather":
-        return """    try:
-        result = await external_service.get_weather(city=request.city)
-        return result
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"天気情報の取得に失敗しました: {str(e)}"
-        )"""
-
-    elif operation_id == "get_random_quote":
-        return """    try:
-        result = await external_service.get_random_quote()
-        return result
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"名言の取得に失敗しました: {str(e)}"
-        )"""
-
-    elif operation_id == "get_random_fact":
-        return """    try:
-        result = await external_service.get_random_fact()
-        return result
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"豆知識の取得に失敗しました: {str(e)}"
-        )"""
-
-    elif operation_id == "get_programming_joke":
-        return """    try:
-        joke_data = await external_service.get_random_joke()
-        return JokeResponse(
-            joke=joke_data["joke"],
-            type=joke_data.get("category", "programming")
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"ジョークの取得に失敗しました: {str(e)}"
-        )"""
-
-    # Default fallback
-    else:
+        # Default fallback - still use service pattern
         return '    # TODO: 実装が必要\n    raise HTTPException(status_code=501, detail="Not implemented")'
 
 
