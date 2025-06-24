@@ -19,7 +19,7 @@ test:
 test --cov:
 	poetry run pytest --cov=app tests/
 
-generate all:
+generate:
 	python3 scripts/generate_all.py
 
 generate docs:
