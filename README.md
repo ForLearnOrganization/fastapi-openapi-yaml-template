@@ -64,7 +64,7 @@ make generate frontend
 
 ```bash
 # すべてを一括生成（バックエンド + フロントエンド + docs）
-make generate all
+make generate
 
 ```
 
