@@ -24,7 +24,8 @@ def find_service_module(tag: str) -> str:
     for candidate in candidates:
         if (SERVICES_DIR / f"{candidate}.py").exists():
             return candidate
-    return "default_service"
+    return "old_service"
+
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
@@ -216,6 +217,56 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
     return class_def
 
 
+def generate_service_impls(spec: dict[str, Any]) -> None:
+    """サービス関数スタブを1ファイルずつ自動生成します。"""
+    paths = spec.get("paths", {})
+    for path, methods in paths.items():
+        for method, operation in methods.items():
+            if method.lower() not in ["get", "post", "put", "delete", "patch"]:
+                continue
+
+            operation_id = operation.get("operationId")
+            if not operation_id:
+                print(f"⚠️ operationIdが指定されていません: {path} {method}")
+                continue
+
+            # タグからサブディレクトリ名を取得
+            tags = operation.get("tags", [])
+            tag = tags[0] if tags else "default"
+            tag_dir = SERVICES_DIR / tag
+            tag_dir.mkdir(parents=True, exist_ok=True)
+
+            http_method = method.lower()
+            has_prefix = re.match(r"^(get|post|put|delete|patch)_", operation_id)
+            function_name = (
+                f"{operation_id}_impl"
+                if has_prefix
+                else f"{http_method}_{operation_id}_impl"
+            )
+
+            service_file_path = tag_dir / f"{function_name}.py"
+            if service_file_path.exists():
+                continue  # 既に存在するならスキップ
+
+            # テンプレート生成
+            stub = f'''"""
+{tag}サービス: {function_name} の自動生成スタブ
+"""
+
+from typing import Any
+
+
+async def {function_name}(request: Any = None) -> Any:
+    """TODO: 実装してください"""
+    return {{"message": "{function_name} not implemented"}}
+'''
+
+            with open(service_file_path, "w", encoding="utf-8") as f:
+                f.write(stub)
+
+            print(f"🛠️ サービススタブ生成: {service_file_path}")
+
+
 def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
     """OpenAPIプロパティ定義をPython型に変換します。"""
     prop_type = prop_def.get("type", "any")
@@ -331,28 +382,34 @@ def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[st
                     # 明示的なマッピングがなければHTTPメソッド接頭辞で生成
 
                     # タグまたはパスからサービスモジュール名を決定
+                    http_method = method.lower()
+                    # Check if operation_id already contains an HTTP method prefix
+                    has_method_prefix = bool(
+                        re.match(r"^(get|post|put|delete|patch)_", operation_id)
+                    )
+
+                    if has_method_prefix:
+                        # If operation_id already has a method prefix, use it as-is and add _impl
+                        service_function_name = f"{operation_id}_impl"
+                    else:
+                        # Otherwise, prepend the HTTP method and add _impl
+                        service_function_name = f"{http_method}_{operation_id}_impl"
+                        # 可読性向上のためインポートを複数行に分割
+
                         match = re.search(r"/api/v1/([^/]+)/", path)
                         tag = match.group(1) if match else "default"
 
                     service_module = find_service_module(tag)
-        function_names_sorted = sorted(set(function_names))  # 重複を除いてソート
-            # 可読性向上のためインポートを複数行に分割
-                        else:
-                            service_module = f"{tag}_service"
-                    else:
-                        # Fallback based on path
-                        if "/health" in path:
-                            service_module = "health"
-                        elif "/text" in path or "/generate" in path:
-                            service_module = "text_service"
-                        elif "/external" in path:
-                            service_module = "external_service"
-                        else:
-                            service_module = "default_service"
 
                     if service_module not in service_imports:
                         service_imports[service_module] = []
-                    service_imports[service_module].append(service_function_name)
+                        service_imports[service_module].append(service_function_name)
+                else:
+                    # operation_idを指定してくださいとエラー
+                    print(
+                        f"⚠️ operationIdが指定されていません: {path} {method}. operationIdを設定してください。"
+                    )
+                    continue
 
     return service_imports
 
@@ -568,7 +625,7 @@ def generate_endpoint_body(
         service_function_name = operation_id
     else:
         # Otherwise, prepend the HTTP method
-        service_function_name = f"{http_method_lower}_{operation_id}"
+        service_function_name = f"{http_method}_{operation_id}"
 
     # Generate function call with or without parameters
     if request_param:
@@ -600,6 +657,9 @@ def main():
 
         # ルーター生成
         generate_router_stubs(spec, str(output_dir))
+
+        # サービス内に関数生成
+        generate_service_impls(spec)
 
         # 生成されたファイルをフォーマット
         format_generated_files(output_dir)
