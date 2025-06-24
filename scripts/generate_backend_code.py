@@ -279,7 +279,7 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
     elif prop_type == "integer":
         return "int"
     elif prop_type == "number":
-        return "float"
+    for tag in sorted(tags, key=lambda t: t["name"]):
     elif prop_type == "boolean":
         return "bool"
     elif prop_type == "array":
@@ -354,8 +354,9 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
         )
         router_definitions.append(router_def)
 
-    # レガシールーター（プレフィックスなし）の処理
-    legacy_needed = False
+    for service_module in sorted(service_imports):
+        function_names = service_imports[service_module]
+    for schema_name in sorted(schemas.keys()):
     paths = spec.get("paths", {})
     for path in paths.keys():
         if not path.startswith("/api/v1/"):
