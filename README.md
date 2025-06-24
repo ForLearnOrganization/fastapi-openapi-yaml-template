@@ -43,11 +43,11 @@ make start
 
 ```bash
 # YAML-First: バックエンド成果物の生成（Pydanticモデル、FastAPIルーター、ドキュメント）
-make generate backend
+make generate-backend
 
 # 新しいエンドポイント追加フロー:
 # 1. source/openapi.yaml を編集
-# 2. make generate all を実行
+# 2. make generate を実行
 # 3. app/generated/generated_router.py から呼び出している_implのサフィックスがついた関数に処理を書く
 ```
 
@@ -55,7 +55,7 @@ make generate backend
 
 ```bash
 # TypeScript型定義とAPIクライアントの生成
-make generate frontend
+make generate-frontend
 
 # Next.jsプロジェクトで型安全なAPI呼び出しが可能
 ```
@@ -388,7 +388,7 @@ poetry run mypy app/
 make test
 
 # カバレッジ付きテスト
-make test --cov
+make test-cov
 ```
 
 ## 🚀 本番デプロイメント
