@@ -43,39 +43,12 @@ def format_generated_files(output_dir: Path) -> None:
     """生成されたPythonファイルをruffでフォーマットします。"""
     try:
         python_files = list(output_dir.glob("*.py"))
-        if not python_files:
-            return
+        if python_files:
+            print("🎨 生成されたファイルをフォーマット中...")
 
-        print("🎨 生成されたファイルをフォーマット中...")
-
-        # PYTHONPYCACHEPREFIX環境変数を設定
-        import os
-
-        env = os.environ.copy()
-        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
-
-        # まずpoetry run ruffを試す
-        try:
+            # 修正可能なlintエラーをfix（失敗しても継続）
             subprocess.run(
                 [
-                    sys.executable,
-                    "-m",
-                    "poetry",
-                    "run",
-                    "ruff",
-                    "format",
-                    *[str(f) for f in python_files],
-                ],
-                check=True,
-                cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
-            )
-
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
                     "poetry",
                     "run",
                     "ruff",
@@ -83,45 +56,20 @@ def format_generated_files(output_dir: Path) -> None:
                     "--fix",
                     *[str(f) for f in python_files],
                 ],
-                check=False,
                 cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
             )
-
-            print("✨ フォーマット完了（poetry経由）")
-            return
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-        # 次に直接ruffを試す
-        try:
+            # poetry環境内でruff formatを実行
             subprocess.run(
-                ["ruff", "format", *[str(f) for f in python_files]],
+                ["poetry", "run", "ruff", "format", *[str(f) for f in python_files]],
                 check=True,
                 cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
             )
 
-            subprocess.run(
-                ["ruff", "check", "--fix", *[str(f) for f in python_files]],
-                check=False,
-                cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
-            )
-
-            print("✨ フォーマット完了（直接実行）")
-            return
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-        # 最後にpip install ruffでインストールして試す
-        print("⚠️  ruffが見つかりません。基本的なフォーマットを適用します...")
-
-    except Exception as e:
+            print("✨ フォーマット完了")
+    except subprocess.CalledProcessError as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
+    except FileNotFoundError:
+        print("⚠️  poetryまたはruffが見つかりません。手動でフォーマットしてください")
 
 
 def generate_pydantic_models(spec: dict[str, Any], output_dir: str) -> None:
