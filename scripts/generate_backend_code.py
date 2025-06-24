@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# generate_backend_code.py
 """
 OpenAPI YAML ファーストアプローチ用のコード生成スクリプト
 
@@ -13,6 +14,24 @@ from typing import Any
 
 import yaml
 
+# OpenAPIのoperationIdからサービス層の関数名への明示的なマッピング
+# サービスモジュールが配置されているディレクトリ
+SERVICES_DIR = Path(__file__).resolve().parent.parent / "app" / "services"
+
+
+def find_service_module(tag: str) -> str:
+    """タグ名から適切なサービスモジュールを探索します。"""
+    tag_path = SERVICES_DIR / tag
+    if tag_path.is_dir():
+        return tag  # ディレクトリが存在する場合はそれをサービスモジュールと見なす
+
+    candidates = [tag, f"{tag}_service"]
+    for candidate in candidates:
+        if (SERVICES_DIR / f"{candidate}.py").exists():
+            return candidate
+
+    return "old_service"
+
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
     """OpenAPI YAML仕様をロードします。"""
@@ -24,39 +43,12 @@ def format_generated_files(output_dir: Path) -> None:
     """生成されたPythonファイルをruffでフォーマットします。"""
     try:
         python_files = list(output_dir.glob("*.py"))
-        if not python_files:
-            return
+        if python_files:
+            print("🎨 生成されたファイルをフォーマット中...")
 
-        print("🎨 生成されたファイルをフォーマット中...")
-
-        # PYTHONPYCACHEPREFIX環境変数を設定
-        import os
-
-        env = os.environ.copy()
-        env["PYTHONPYCACHEPREFIX"] = ".cache/pycache"
-
-        # まずpoetry run ruffを試す
-        try:
+            # 修正可能なlintエラーをfix（失敗しても継続）
             subprocess.run(
                 [
-                    sys.executable,
-                    "-m",
-                    "poetry",
-                    "run",
-                    "ruff",
-                    "format",
-                    *[str(f) for f in python_files],
-                ],
-                check=True,
-                cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
-            )
-
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
                     "poetry",
                     "run",
                     "ruff",
@@ -64,45 +56,20 @@ def format_generated_files(output_dir: Path) -> None:
                     "--fix",
                     *[str(f) for f in python_files],
                 ],
-                check=False,
                 cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
             )
-
-            print("✨ フォーマット完了（poetry経由）")
-            return
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-        # 次に直接ruffを試す
-        try:
+            # poetry環境内でruff formatを実行
             subprocess.run(
-                ["ruff", "format", *[str(f) for f in python_files]],
+                ["poetry", "run", "ruff", "format", *[str(f) for f in python_files]],
                 check=True,
                 cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
             )
 
-            subprocess.run(
-                ["ruff", "check", "--fix", *[str(f) for f in python_files]],
-                check=False,
-                cwd=output_dir.parent.parent,
-                capture_output=True,
-                env=env,
-            )
-
-            print("✨ フォーマット完了（直接実行）")
-            return
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-        # 最後にpip install ruffでインストールして試す
-        print("⚠️  ruffが見つかりません。基本的なフォーマットを適用します...")
-
-    except Exception as e:
+            print("✨ フォーマット完了")
+    except subprocess.CalledProcessError as e:
         print(f"⚠️  フォーマットに失敗しましたが、生成は完了しています: {e}")
+    except FileNotFoundError:
+        print("⚠️  poetryまたはruffが見つかりません。手動でフォーマットしてください")
 
 
 def generate_pydantic_models(spec: dict[str, Any], output_dir: str) -> None:
@@ -179,15 +146,15 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
 
         # 数値制約
         if "minimum" in prop_def:
-            field_params.append(f'ge={prop_def["minimum"]}')
+            field_params.append(f"ge={prop_def['minimum']}")
         if "maximum" in prop_def:
-            field_params.append(f'le={prop_def["maximum"]}')
+            field_params.append(f"le={prop_def['maximum']}")
 
         # 文字列制約
         if "minLength" in prop_def:
-            field_params.append(f'min_length={prop_def["minLength"]}')
+            field_params.append(f"min_length={prop_def['minLength']}")
         if "maxLength" in prop_def:
-            field_params.append(f'max_length={prop_def["maxLength"]}')
+            field_params.append(f"max_length={prop_def['maxLength']}")
 
         if field_params:
             # 長い行を避けるため、パラメータが多い場合は複数行に分割
@@ -195,13 +162,63 @@ def generate_model_class(name: str, schema: dict[str, Any]) -> str:
             if len(f"    {prop_name}: {field_type} = Field({params_str})") > 80:
                 # バックスラッシュを含む文字列を変数に分離
                 multiline_params = ",\n        ".join(field_params)
-                field_def = f" = Field(\n        {multiline_params}\n    )"
+                field_def = f" = Field(\n            {multiline_params}\n        )"
             else:
                 field_def = f" = Field({params_str})"
 
         class_def += f"    {prop_name}: {field_type}{field_def}\n"
 
     return class_def
+
+
+def generate_service_impls(spec: dict[str, Any]) -> None:
+    """サービス関数スタブを1ファイルずつ自動生成します。"""
+    paths = spec.get("paths", {})
+    for path, methods in paths.items():
+        for method, operation in methods.items():
+            if method.lower() not in ["get", "post", "put", "delete", "patch"]:
+                continue
+
+            operation_id = operation.get("operationId")
+            if not operation_id:
+                print(f"⚠️ operationIdが指定されていません: {path} {method}")
+                continue
+
+            # タグからサブディレクトリ名を取得
+            tags = operation.get("tags", [])
+            tag = tags[0] if tags else "default"
+            tag_dir = SERVICES_DIR / tag
+            tag_dir.mkdir(parents=True, exist_ok=True)
+
+            http_method = method.lower()
+            has_prefix = re.match(r"^(get|post|put|delete|patch)_", operation_id)
+            function_name = (
+                f"{operation_id}_impl"
+                if has_prefix
+                else f"{http_method}_{operation_id}_impl"
+            )
+
+            service_file_path = tag_dir / f"{function_name}.py"
+            if service_file_path.exists():
+                continue  # 既に存在するならスキップ
+
+            # テンプレート生成
+            stub = f'''"""
+{tag}サービス: {function_name} の自動生成スタブ
+"""
+
+from typing import Any
+
+
+async def {function_name}(request: Any = None) -> Any:
+    """TODO: 実装してください"""
+    return {{"message": "{function_name} not implemented"}}
+'''
+
+            with open(service_file_path, "w", encoding="utf-8") as f:
+                f.write(stub)
+
+            print(f"🛠️ サービススタブ生成: {service_file_path}")
 
 
 def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
@@ -235,35 +252,39 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
 def extract_tags_from_spec(spec: dict[str, Any]) -> list[dict[str, str]]:
     """OpenAPI仕様からタグ情報を抽出します。"""
     tags = spec.get("tags", [])
-    return [{"name": tag["name"], "description": tag.get("description", "")} for tag in tags]
+    return [
+        {"name": tag["name"], "description": tag.get("description", "")} for tag in tags
+    ]
 
 
 def extract_router_prefixes_from_paths(spec: dict[str, Any]) -> dict[str, str]:
     """パスから各タグのプレフィックスを抽出します。"""
     paths = spec.get("paths", {})
     tag_prefixes = {}
-    
+
     for path, methods in paths.items():
         for method, operation in methods.items():
             if method.lower() in ["get", "post", "put", "delete", "patch"]:
                 tags = operation.get("tags", [])
                 if tags:
                     tag_name = tags[0]  # 最初のタグを使用
-                    
+
                     # レガシーパスは特別扱い
                     if path.startswith("/generate"):
                         continue  # レガシーパスはプレフィックス抽出をスキップ
-                    
+
                     # パスからプレフィックスを推測
                     if path.startswith("/api/v1/"):
                         # /api/v1/health/ -> /health
                         # /api/v1/text/generate -> /text
-                        path_parts = path.split("/")[3:]  # ['health', ''] または ['text', 'generate']
+                        path_parts = path.split("/")[
+                            3:
+                        ]  # ['health', ''] または ['text', 'generate']
                         if path_parts and path_parts[0]:
                             prefix = f"/{path_parts[0]}"
                             if tag_name not in tag_prefixes:
                                 tag_prefixes[tag_name] = prefix
-    
+
     return tag_prefixes
 
 
@@ -271,20 +292,22 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
     """タグ情報から動的にルーター定義を生成します。"""
     tags = extract_tags_from_spec(spec)
     tag_prefixes = extract_router_prefixes_from_paths(spec)
-    
+
     router_definitions = []
     router_names = []
-    
+
     for tag in tags:
         tag_name = tag["name"]
         prefix = tag_prefixes.get(tag_name, f"/{tag_name}")
-        
+
         router_var_name = f"{tag_name}_router"
         router_names.append(router_var_name)
-        
-        router_def = f'{router_var_name} = APIRouter(prefix="{prefix}", tags=["{tag_name}"])'
+
+        router_def = (
+            f'{router_var_name} = APIRouter(prefix="{prefix}", tags=["{tag_name}"])'
+        )
         router_definitions.append(router_def)
-    
+
     # レガシールーター（プレフィックスなし）の処理
     legacy_needed = False
     paths = spec.get("paths", {})
@@ -292,82 +315,77 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
         if not path.startswith("/api/v1/"):
             legacy_needed = True
             break
-    
+
     if legacy_needed:
         router_definitions.append('legacy_router = APIRouter(tags=["text"])')
         router_names.append("legacy_router")
-    
+
     return "\n".join(router_definitions), router_names
 
 
 def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[str]]:
     """OpenAPI仕様からサービス関数のインポートを抽出します。"""
-    service_imports = {}  # service_module_name -> [function_names]
+    service_imports: dict[str, list[str]] = {}
     paths = spec.get("paths", {})
-    
+
     for path, methods in paths.items():
         for method, operation in methods.items():
-            if method.lower() in ["get", "post", "put", "delete", "patch"]:
-                operation_id = operation.get("operationId", "")
-                if operation_id:
-                    # Create service function name
-                    http_method = method.lower()
-                    
-                    # Check if operation_id already contains an HTTP method prefix
-                    http_methods = ["get", "post", "put", "delete", "patch"]
-                    has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
-                    
-                    if has_method_prefix:
-                        # If operation_id already has a method prefix, use it as-is
-                        service_function_name = operation_id
-                    else:
-                        # Otherwise, prepend the HTTP method
-                        service_function_name = f"{http_method}_{operation_id}"
-                    
-                    # Determine service module based on tags or path
-                    tags = operation.get("tags", [])
-                    if tags:
-                        tag = tags[0]
-                        if tag == "health":
-                            service_module = "health"
-                        elif tag == "text":
-                            service_module = "text_service"
-                        elif tag == "external":
-                            service_module = "external_service"
-                        else:
-                            service_module = f"{tag}_service"
-                    else:
-                        # Fallback based on path
-                        if "/health" in path:
-                            service_module = "health"
-                        elif "/text" in path or "/generate" in path:
-                            service_module = "text_service"
-                        elif "/external" in path:
-                            service_module = "external_service"
-                        else:
-                            service_module = "default_service"
-                    
-                    if service_module not in service_imports:
-                        service_imports[service_module] = []
-                    service_imports[service_module].append(service_function_name)
-    
+            if method.lower() not in ["get", "post", "put", "delete", "patch"]:
+                continue
+
+            operation_id = operation.get("operationId", "")
+            if not operation_id:
+                print(
+                    f"⚠️ operationIdが指定されていません: {path} {method}. operationIdを設定してください。"
+                )
+                continue
+
+            http_method = method.lower()
+            has_method_prefix = bool(
+                re.match(r"^(get|post|put|delete|patch)_", operation_id)
+            )
+
+            if has_method_prefix:
+                service_function_name = f"{operation_id}_impl"
+            else:
+                service_function_name = f"{http_method}_{operation_id}_impl"
+
+            # タグの抽出
+            tags = operation.get("tags", [])
+            tag = tags[0] if tags else "default"
+
+            # モジュール名の決定
+            service_module = find_service_module(tag)
+
+            if service_module not in service_imports:
+                service_imports[service_module] = []
+            service_imports[service_module].append(service_function_name)
+
     return service_imports
 
 
 def generate_service_imports(service_imports: dict[str, list[str]]) -> str:
-    """サービスインポート文を生成します。"""
+    """サービスインポート文を生成します（余計なカンマを除去）"""
     import_lines = []
-    
+
     for service_module, function_names in service_imports.items():
-        function_names_sorted = sorted(set(function_names))  # Remove duplicates and sort
+        function_names_sorted = sorted(set(function_names))
+
         if len(function_names_sorted) == 1:
-            import_line = f"from app.services.{service_module} import {function_names_sorted[0]}"
+            # 関数が1つだけなら1行でimport
+            import_line = (
+                f"from app.services.{service_module} import {function_names_sorted[0]}"
+            )
         else:
-            # Multi-line import for better readability
+            # 複数関数ならマルチライン（カンマの位置も適切に）
             functions_str = ",\n    ".join(function_names_sorted)
-            import_line = f"from app.services.{service_module} import (\n    {functions_str},\n)"
+            import_line = (
+                f"from app.services.{service_module} import (\n"
+                f"    {functions_str},\n"
+                f")"
+            )
         import_lines.append(import_line)
-    
+
     return "\n".join(import_lines)
 
 
@@ -430,18 +448,17 @@ from app.generated.generated_models import {imports_str}
     # 主ルーターに登録 - 動的生成
     main_router_includes = []
     for router_name in router_names:
-        if router_name != "legacy_router":  # Legacy router is mounted separately
+        if router_name != "legacy_router":  # legacy_routerは別でマウントする
             main_router_includes.append(f"main_router.include_router({router_name})")
-    
+
     router_registration = "\n".join(main_router_includes)
-    
+
     content += f"""
 # メインルーターを作成
 main_router = APIRouter()
 {router_registration}
 
-# Legacy router should be separate (not include in main_router)
-# so it can be mounted without /api/v1 prefix
+# legacy_routerはmain_routerに含めず、/api/v1を付けずにマウントするため別扱い
 """
 
     with open(router_file, "w", encoding="utf-8") as f:
@@ -456,7 +473,7 @@ def generate_endpoint_implementation(
     """単一のエンドポイント実装を生成します。"""
     operation_id = operation.get(
         "operationId",
-        f'{method}_{path.replace("/", "_").replace("{", "").replace("}", "")}',
+        f"{method}_{path.replace('/', '_').replace('{', '').replace('}', '')}",
     )
     summary = operation.get("summary", "")
     description = operation.get("description", "")
@@ -469,7 +486,7 @@ def generate_endpoint_implementation(
     if tags:
         tag = tags[0]
         tag_prefixes = extract_router_prefixes_from_paths(spec)
-        
+
         if tag in tag_prefixes:
             if path.startswith("/generate"):
                 # レガシーエンドポイントの特別処理
@@ -509,7 +526,7 @@ def generate_endpoint_implementation(
         response_type = ref.split("/")[-1]
 
     # パスパラメータの処理
-    path_params = re.findall(r"\\{([^}]+)\\}", path)
+    path_params = re.findall(r"\{([^}]+)\}", path)
     path_param_str = ""
     if path_params:
         path_param_str = ", " + ", ".join([f"{param}: str" for param in path_params])
@@ -532,35 +549,41 @@ def generate_endpoint_implementation(
         docstring = f'    """{description}"""'
 
     # 実装本体を生成（HTTPメソッドも渡す）
-    body = generate_endpoint_body(operation_id, path, request_param, response_type, method)
+    body = generate_endpoint_body(
+        operation_id, path, request_param, response_type, method
+    )
 
     return f"{decorator}\n{function_def}\n{docstring}\n{body}"
 
 
 def generate_endpoint_body(
-    operation_id: str, path: str, request_param: str, response_type: str, http_method: str
+    operation_id: str,
+    path: str,
+    request_param: str,
+    response_type: str,
+    http_method: str,
 ) -> str:
     """エンドポイントの実装本体を生成します。"""
-    
-    # Create service function name
-    http_method_lower = http_method.lower()
-    
+
+    # 可能であれば明示的なマッピングを優先
+    # パラメータの有無に応じて関数呼び出しを生成
+
     # Check if operation_id already contains an HTTP method prefix
     http_methods = ["get", "post", "put", "delete", "patch"]
     has_method_prefix = any(operation_id.startswith(f"{m}_") for m in http_methods)
-    
+
     if has_method_prefix:
         # If operation_id already has a method prefix, use it as-is
         service_function_name = operation_id
     else:
         # Otherwise, prepend the HTTP method
-        service_function_name = f"{http_method_lower}_{operation_id}"
+        service_function_name = f"{http_method}_{operation_id}"
 
     # Generate function call with or without parameters
     if request_param:
-        return f"    return await {service_function_name}(request)"
+        return f"    return await {service_function_name}_impl(request)"
     else:
-        return f"    return await {service_function_name}()"
+        return f"    return await {service_function_name}_impl()"
 
 
 def main():
@@ -568,9 +591,15 @@ def main():
     print("🚀 OpenAPI YAML-firstコード生成を開始...")
 
     # パス設定
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parent.parent
     yaml_path = project_root / "source" / "openapi.yaml"
     output_dir = project_root / "app" / "generated"
+
+    # 生成ディレクトリがパッケージとして認識されるよう__init__.pyを作成
+    output_dir.mkdir(parents=True, exist_ok=True)
+    init_file = output_dir / "__init__.py"
+    if not init_file.exists():
+        init_file.write_text("# generated package\n", encoding="utf-8")
 
     if not yaml_path.exists():
         print(f"❌ OpenAPI YAML ファイルが見つかりません: {yaml_path}")
@@ -586,6 +615,9 @@ def main():
 
         # ルーター生成
         generate_router_stubs(spec, str(output_dir))
+
+        # サービス内に関数生成
+        generate_service_impls(spec)
 
         # 生成されたファイルをフォーマット
         format_generated_files(output_dir)

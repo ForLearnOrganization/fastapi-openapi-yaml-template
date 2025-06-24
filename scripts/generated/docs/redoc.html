@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,7 +17,646 @@
     <div id="redoc-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"></script>
     <script>
-        const spec = {"openapi": "3.1.0", "info": {"title": "localLLM-FastAPI", "description": "FastAPI経由で、localLLMを動かすスケーラブルなAPIアプリケーション\n\n## 機能\n- 🔄 テキスト生成とエコー\n- ❤️ ヘルスチェック\n- 🌐 外部API統合（モック）\n- 📖 自動生成ドキュメント\n- 🔧 TypeScript型生成対応\n\n## 開発者向け情報\n本APIは手書きのOpenAPI YAMLスキーマから自動生成されたコードベースです。\nスキーマファーストの開発アプローチを採用しています。\n", "version": "1.0.0", "contact": {"name": "localLLM-FastAPI開発チーム", "url": "https://github.com/ForLearnOrganization/localllm-fastapi"}, "license": {"name": "MIT", "url": "https://opensource.org/licenses/MIT"}}, "servers": [{"url": "http://localhost:8000", "description": "開発サーバー"}, {"url": "http://127.0.0.1:8000", "description": "ローカル開発サーバー"}], "tags": [{"name": "health", "description": "ヘルスチェック・システム監視"}, {"name": "text", "description": "テキスト生成・処理"}, {"name": "external", "description": "外部API統合（モックデータ）"}], "paths": {"/api/v1/health/": {"get": {"tags": ["health"], "summary": "基本ヘルスチェック", "description": "APIサーバーの基本動作確認", "operationId": "health_check", "responses": {"200": {"description": "サーバー正常", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HealthResponse"}, "example": {"status": "healthy", "timestamp": "2024-01-01T00:00:00Z"}}}}}}}, "/api/v1/health/detailed": {"get": {"tags": ["health"], "summary": "詳細ヘルスチェック", "description": "システムの詳細情報とヘルス状態", "operationId": "detailed_health_check", "responses": {"200": {"description": "詳細ヘルス情報", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DetailedHealthResponse"}}}}}}}, "/api/v1/text/generate": {"post": {"tags": ["text"], "summary": "テキスト生成", "description": "ルールベースまたはLLMを使用したテキスト生成", "operationId": "generate_text", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GenerateTextRequest"}, "example": {"prompt": "こんにちは世界", "max_length": 100, "temperature": 0.7}}}}, "responses": {"200": {"description": "テキスト生成成功", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GenerateTextResponse"}, "example": {"generated_text": "こんにちは世界！今日は素晴らしい日ですね。", "input_prompt": "こんにちは世界", "metadata": {"method": "rule_based", "length": 25}}}}}, "422": {"description": "入力検証エラー", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}}}}, "/api/v1/text/echo": {"post": {"tags": ["text"], "summary": "テキストエコーと分析", "description": "入力テキストの分析とメタデータ付きレスポンス", "operationId": "echo_text", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EchoTextRequest"}, "example": {"text": "分析対象のテキスト"}}}}, "responses": {"200": {"description": "エコー成功", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EchoTextResponse"}}}}}}}, "/api/v1/external/weather": {"post": {"tags": ["external"], "summary": "天気情報取得", "description": "指定された都市の天気情報（モックデータ）", "operationId": "get_weather", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WeatherRequest"}, "example": {"city": "東京"}}}}, "responses": {"200": {"description": "天気情報", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WeatherResponse"}}}}}}}, "/api/v1/external/quote": {"get": {"tags": ["external"], "summary": "ランダム名言取得", "description": "インスピレーション名言の取得（モックデータ）", "operationId": "get_random_quote", "responses": {"200": {"description": "名言", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QuoteResponse"}}}}}}}, "/api/v1/external/fact": {"get": {"tags": ["external"], "summary": "ランダム豆知識取得", "description": "興味深い豆知識の取得（モックデータ）", "operationId": "get_random_fact", "responses": {"200": {"description": "豆知識", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FactResponse"}}}}}}}, "/api/v1/external/joke": {"get": {"tags": ["external"], "summary": "プログラミングジョーク取得", "description": "開発者向けユーモア（モックデータ）", "operationId": "get_programming_joke", "responses": {"200": {"description": "ジョーク", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/JokeResponse"}}}}}}}, "/generate": {"post": {"tags": ["text"], "summary": "テキスト生成（後方互換）", "description": "既存コードとの後方互換性のためのエンドポイント", "operationId": "generate_text_legacy", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GenerateTextRequest"}}}}, "responses": {"200": {"description": "テキスト生成成功", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GenerateTextResponse"}}}}}}}}, "components": {"schemas": {"HealthResponse": {"type": "object", "properties": {"status": {"type": "string", "description": "ヘルス状態", "example": "healthy"}, "timestamp": {"type": "string", "format": "date-time", "description": "チェック実行時刻"}}, "required": ["status", "timestamp"]}, "DetailedHealthResponse": {"type": "object", "properties": {"status": {"type": "string", "description": "全体ヘルス状態"}, "timestamp": {"type": "string", "format": "date-time", "description": "チェック実行時刻"}, "system_info": {"type": "object", "properties": {"python_version": {"type": "string", "description": "Pythonバージョン"}, "platform": {"type": "string", "description": "プラットフォーム情報"}, "memory_usage": {"type": "number", "description": "メモリ使用量（MB）"}, "uptime": {"type": "number", "description": "アップタイム（秒）"}}}, "services": {"type": "object", "properties": {"database": {"type": "string", "description": "データベース接続状態"}, "cache": {"type": "string", "description": "キャッシュ状態"}, "external_apis": {"type": "string", "description": "外部API状態"}}}}, "required": ["status", "timestamp"]}, "GenerateTextRequest": {"type": "object", "properties": {"prompt": {"type": "string", "description": "テキスト生成用のプロンプト", "example": "今日の天気は"}, "max_length": {"type": "integer", "description": "生成テキストの最大長", "default": 100, "minimum": 1, "maximum": 1000}, "temperature": {"type": "number", "description": "テキスト生成の温度パラメータ", "default": 0.7, "minimum": 0.0, "maximum": 2.0}}, "required": ["prompt"]}, "GenerateTextResponse": {"type": "object", "properties": {"generated_text": {"type": "string", "description": "生成されたテキスト"}, "input_prompt": {"type": "string", "description": "元の入力プロンプト"}, "metadata": {"type": "object", "properties": {"method": {"type": "string", "description": "生成手法", "enum": ["rule_based", "llm"]}, "length": {"type": "integer", "description": "生成テキストの文字数"}, "generation_time": {"type": "number", "description": "生成にかかった時間（秒）"}}}}, "required": ["generated_text", "input_prompt"]}, "EchoTextRequest": {"type": "object", "properties": {"text": {"type": "string", "description": "エコー対象のテキスト", "example": "分析対象テキスト"}}, "required": ["text"]}, "EchoTextResponse": {"type": "object", "properties": {"echo": {"type": "string", "description": "エコーされたテキスト"}, "analysis": {"type": "object", "properties": {"character_count": {"type": "integer", "description": "文字数"}, "word_count": {"type": "integer", "description": "単語数"}, "language": {"type": "string", "description": "推定言語"}, "sentiment": {"type": "string", "description": "感情分析結果", "enum": ["positive", "negative", "neutral"]}}}, "timestamp": {"type": "string", "format": "date-time", "description": "処理時刻"}}, "required": ["echo", "analysis", "timestamp"]}, "WeatherRequest": {"type": "object", "properties": {"city": {"type": "string", "description": "都市名", "example": "東京"}}, "required": ["city"]}, "WeatherResponse": {"type": "object", "properties": {"city": {"type": "string", "description": "都市名"}, "temperature": {"type": "number", "description": "気温（摂氏）"}, "humidity": {"type": "number", "description": "湿度（%）"}, "description": {"type": "string", "description": "天気の説明"}, "is_mock": {"type": "boolean", "description": "モックデータかどうか", "default": true}}, "required": ["city", "temperature", "humidity", "description"]}, "QuoteResponse": {"type": "object", "properties": {"quote": {"type": "string", "description": "名言"}, "author": {"type": "string", "description": "著者"}, "category": {"type": "string", "description": "カテゴリ"}}, "required": ["quote", "author"]}, "FactResponse": {"type": "object", "properties": {"fact": {"type": "string", "description": "興味深い豆知識"}, "source": {"type": "string", "description": "豆知識の出典"}}, "required": ["fact"]}, "JokeResponse": {"type": "object", "properties": {"joke": {"type": "string", "description": "プログラミングジョーク"}, "type": {"type": "string", "description": "ジョークのタイプ", "enum": ["programming", "dev", "tech"]}}, "required": ["joke", "type"]}, "ErrorResponse": {"type": "object", "properties": {"detail": {"type": "string", "description": "エラーの詳細"}, "error_code": {"type": "string", "description": "エラーコード"}, "timestamp": {"type": "string", "format": "date-time", "description": "エラー発生時刻"}}, "required": ["detail"]}}}};
+        const spec = {
+  "openapi": "3.1.0",
+  "info": {
+    "title": "localLLM-FastAPI",
+    "description": "FastAPI経由で、localLLMを動かすスケーラブルなAPIアプリケーション\n\n## 機能\n- 🔄 テキスト生成とエコー\n- ❤️ ヘルスチェック\n- 🌐 外部API統合（モック）\n- 📖 自動生成ドキュメント\n- 🔧 TypeScript型生成対応\n\n## 開発者向け情報\n本APIは手書きのOpenAPI YAMLスキーマから自動生成されたコードベースです。\nスキーマファーストの開発アプローチを採用しています。\n",
+    "version": "1.0.0",
+    "contact": {
+      "name": "localLLM-FastAPI開発チーム",
+      "url": "https://github.com/ForLearnOrganization/localllm-fastapi"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "開発サーバー"
+    },
+    {
+      "url": "http://127.0.0.1:8000",
+      "description": "ローカル開発サーバー"
+    }
+  ],
+  "tags": [
+    {
+      "name": "health",
+      "description": "ヘルスチェック・システム監視"
+    },
+    {
+      "name": "text",
+      "description": "テキスト生成・処理"
+    },
+    {
+      "name": "external",
+      "description": "外部API統合（モックデータ）"
+    }
+  ],
+  "paths": {
+    "/api/v1/health/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "基本ヘルスチェック",
+        "description": "APIサーバーの基本動作確認",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "サーバー正常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2024-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/detailed": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "詳細ヘルスチェック",
+        "description": "システムの詳細情報とヘルス状態",
+        "operationId": "detailed_health_check",
+        "responses": {
+          "200": {
+            "description": "詳細ヘルス情報",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/text/generate": {
+      "post": {
+        "tags": [
+          "text"
+        ],
+        "summary": "テキスト生成",
+        "description": "ルールベースまたはLLMを使用したテキスト生成",
+        "operationId": "generate_text",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTextRequest"
+              },
+              "example": {
+                "prompt": "こんにちは世界",
+                "max_length": 100,
+                "temperature": 0.7
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "テキスト生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateTextResponse"
+                },
+                "example": {
+                  "generated_text": "こんにちは世界！今日は素晴らしい日ですね。",
+                  "input_prompt": "こんにちは世界",
+                  "metadata": {
+                    "method": "rule_based",
+                    "length": 25
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "入力検証エラー",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/text/echo": {
+      "post": {
+        "tags": [
+          "text"
+        ],
+        "summary": "テキストエコーと分析",
+        "description": "入力テキストの分析とメタデータ付きレスポンス",
+        "operationId": "echo_text",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EchoTextRequest"
+              },
+              "example": {
+                "text": "分析対象のテキスト"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "エコー成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EchoTextResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/weather": {
+      "post": {
+        "tags": [
+          "external"
+        ],
+        "summary": "天気情報取得",
+        "description": "指定された都市の天気情報（モックデータ）",
+        "operationId": "get_weather",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherRequest"
+              },
+              "example": {
+                "city": "東京"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "天気情報",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/quote": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "ランダム名言取得",
+        "description": "インスピレーション名言の取得（モックデータ）",
+        "operationId": "get_random_quote",
+        "responses": {
+          "200": {
+            "description": "名言",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/fact": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "ランダム豆知識取得",
+        "description": "興味深い豆知識の取得（モックデータ）",
+        "operationId": "get_random_fact",
+        "responses": {
+          "200": {
+            "description": "豆知識",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/external/joke": {
+      "get": {
+        "tags": [
+          "external"
+        ],
+        "summary": "プログラミングジョーク取得",
+        "description": "開発者向けユーモア（モックデータ）",
+        "operationId": "get_programming_joke",
+        "responses": {
+          "200": {
+            "description": "ジョーク",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JokeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate": {
+      "post": {
+        "tags": [
+          "text"
+        ],
+        "summary": "テキスト生成（後方互換）",
+        "description": "既存コードとの後方互換性のためのエンドポイント",
+        "operationId": "generate_text_legacy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "テキスト生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateTextResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "ヘルス状態",
+            "example": "healthy"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "チェック実行時刻"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp"
+        ]
+      },
+      "DetailedHealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "全体ヘルス状態"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "チェック実行時刻"
+          },
+          "system_info": {
+            "type": "object",
+            "properties": {
+              "python_version": {
+                "type": "string",
+                "description": "Pythonバージョン"
+              },
+              "platform": {
+                "type": "string",
+                "description": "プラットフォーム情報"
+              },
+              "memory_usage": {
+                "type": "number",
+                "description": "メモリ使用量（MB）"
+              },
+              "uptime": {
+                "type": "number",
+                "description": "アップタイム（秒）"
+              }
+            }
+          },
+          "services": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "type": "string",
+                "description": "データベース接続状態"
+              },
+              "cache": {
+                "type": "string",
+                "description": "キャッシュ状態"
+              },
+              "external_apis": {
+                "type": "string",
+                "description": "外部API状態"
+              }
+            }
+          }
+        },
+        "required": [
+          "status",
+          "timestamp"
+        ]
+      },
+      "GenerateTextRequest": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "テキスト生成用のプロンプト",
+            "example": "今日の天気は"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "生成テキストの最大長",
+            "default": 100,
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "temperature": {
+            "type": "number",
+            "description": "テキスト生成の温度パラメータ",
+            "default": 0.7,
+            "minimum": 0.0,
+            "maximum": 2.0
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      },
+      "GenerateTextResponse": {
+        "type": "object",
+        "properties": {
+          "generated_text": {
+            "type": "string",
+            "description": "生成されたテキスト"
+          },
+          "input_prompt": {
+            "type": "string",
+            "description": "元の入力プロンプト"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string",
+                "description": "生成手法",
+                "enum": [
+                  "rule_based",
+                  "llm"
+                ]
+              },
+              "length": {
+                "type": "integer",
+                "description": "生成テキストの文字数"
+              },
+              "generation_time": {
+                "type": "number",
+                "description": "生成にかかった時間（秒）"
+              }
+            }
+          }
+        },
+        "required": [
+          "generated_text",
+          "input_prompt"
+        ]
+      },
+      "EchoTextRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "エコー対象のテキスト",
+            "example": "分析対象テキスト"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "EchoTextResponse": {
+        "type": "object",
+        "properties": {
+          "echo": {
+            "type": "string",
+            "description": "エコーされたテキスト"
+          },
+          "analysis": {
+            "type": "object",
+            "properties": {
+              "character_count": {
+                "type": "integer",
+                "description": "文字数"
+              },
+              "word_count": {
+                "type": "integer",
+                "description": "単語数"
+              },
+              "language": {
+                "type": "string",
+                "description": "推定言語"
+              },
+              "sentiment": {
+                "type": "string",
+                "description": "感情分析結果",
+                "enum": [
+                  "positive",
+                  "negative",
+                  "neutral"
+                ]
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "処理時刻"
+          }
+        },
+        "required": [
+          "echo",
+          "analysis",
+          "timestamp"
+        ]
+      },
+      "WeatherRequest": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "都市名",
+            "example": "東京"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      },
+      "WeatherResponse": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "都市名"
+          },
+          "temperature": {
+            "type": "number",
+            "description": "気温（摂氏）"
+          },
+          "humidity": {
+            "type": "number",
+            "description": "湿度（%）"
+          },
+          "description": {
+            "type": "string",
+            "description": "天気の説明"
+          },
+          "is_mock": {
+            "type": "boolean",
+            "description": "モックデータかどうか",
+            "default": true
+          }
+        },
+        "required": [
+          "city",
+          "temperature",
+          "humidity",
+          "description"
+        ]
+      },
+      "QuoteResponse": {
+        "type": "object",
+        "properties": {
+          "quote": {
+            "type": "string",
+            "description": "名言"
+          },
+          "author": {
+            "type": "string",
+            "description": "著者"
+          },
+          "category": {
+            "type": "string",
+            "description": "カテゴリ"
+          }
+        },
+        "required": [
+          "quote",
+          "author"
+        ]
+      },
+      "FactResponse": {
+        "type": "object",
+        "properties": {
+          "fact": {
+            "type": "string",
+            "description": "興味深い豆知識"
+          },
+          "source": {
+            "type": "string",
+            "description": "豆知識の出典"
+          }
+        },
+        "required": [
+          "fact"
+        ]
+      },
+      "JokeResponse": {
+        "type": "object",
+        "properties": {
+          "joke": {
+            "type": "string",
+            "description": "プログラミングジョーク"
+          },
+          "type": {
+            "type": "string",
+            "description": "ジョークのタイプ",
+            "enum": [
+              "programming",
+              "dev",
+              "tech"
+            ]
+          }
+        },
+        "required": [
+          "joke",
+          "type"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "エラーの詳細"
+          },
+          "error_code": {
+            "type": "string",
+            "description": "エラーコード"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "エラー発生時刻"
+          }
+        },
+        "required": [
+          "detail"
+        ]
+      }
+    }
+  }
+};
         Redoc.init(spec, {}, document.getElementById('redoc-container'));
     </script>
 </body>

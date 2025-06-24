@@ -68,8 +68,9 @@ def generate_redoc_html(openapi_json_path):
     with open(openapi_json_path, encoding="utf-8") as f:
         openapi_spec = json.load(f)
 
-    html_content = f"""
-<!DOCTYPE html>
+    formatted_spec = json.dumps(openapi_spec, indent=2, ensure_ascii=False)
+
+    html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <title>LocalLLM FastAPI Documentation</title>
@@ -88,7 +89,7 @@ def generate_redoc_html(openapi_json_path):
     <div id="redoc-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"></script>
     <script>
-        const spec = {json.dumps(openapi_spec, ensure_ascii=False)};
+        const spec = {formatted_spec};
         Redoc.init(spec, {{}}, document.getElementById('redoc-container'));
     </script>
 </body>
@@ -112,8 +113,9 @@ def generate_swagger_html(openapi_json_path):
     with open(openapi_json_path, encoding="utf-8") as f:
         openapi_spec = json.load(f)
 
-    html_content = f"""
-<!DOCTYPE html>
+    formatted_spec = json.dumps(openapi_spec, indent=2, ensure_ascii=False)
+
+    html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <title>LocalLLM FastAPI - Swagger UI</title>
@@ -124,11 +126,9 @@ def generate_swagger_html(openapi_json_path):
             overflow: -moz-scrollbars-vertical;
             overflow-y: scroll;
         }}
-
         *, *:before, *:after {{
             box-sizing: inherit;
         }}
-
         body {{
             margin:0;
             background: #fafafa;
@@ -141,7 +141,7 @@ def generate_swagger_html(openapi_json_path):
     <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
     <script>
         window.onload = function() {{
-            const spec = {json.dumps(openapi_spec, ensure_ascii=False)};
+            const spec = {formatted_spec};
             const ui = SwaggerUIBundle({{
                 spec: spec,
                 dom_id: '#swagger-ui',
@@ -184,18 +184,15 @@ def main():
         # 4. Swagger UI HTML生成
         generate_swagger_html(json_path)
 
-        # 5. 一時的なJSON/YAMLファイルを削除
-        import os
+        # 5.一時ファイル削除
+        if json_path.exists():
+            json_path.unlink()
+        if yaml_path.exists():
+            yaml_path.unlink()
 
-        if os.path.exists(json_path):
-            os.remove(json_path)
-        if os.path.exists(yaml_path):
-            os.remove(yaml_path)
-
-        # 空になったgeneratedディレクトリも削除
-        generated_dir = json_path.parent
-        if generated_dir.exists() and not any(generated_dir.iterdir()):
-            generated_dir.rmdir()
+        # 6.空のディレクトリを削除
+        if json_path.parent.exists() and not any(json_path.parent.iterdir()):
+            json_path.parent.rmdir()
 
         print("\n🎉 すべてのドキュメント生成が完了しました！")
         print("\n📁 生成されたファイル:")
@@ -203,7 +200,7 @@ def main():
         print("  - ReDoc HTML: scripts/generated/docs/redoc.html")
         print("  - Swagger HTML: scripts/generated/docs/swagger.html")
         print("\n💡 ドキュメントの使い分け:")
-        print("  - ReDoc: 読みやすい形式、エンドユーザー向けドキュメント")
+        print("  - ReDoc: 読みやすい形式、エンドユーザー向け")
         print("  - Swagger: 対話式、開発者向けAPIテスト用")
 
     except Exception as e:

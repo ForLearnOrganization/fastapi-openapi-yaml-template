@@ -19,7 +19,7 @@ from app.core.config import settings
 from app.generated.generated_router import legacy_router
 from app.generated.generated_router import main_router as api_router
 from app.models import GenerateTextRequest, GenerateTextResponse
-from app.services.text_service import TextService
+from app.services.legacy.text_service import TextService
 
 
 def create_custom_openapi(app: FastAPI):

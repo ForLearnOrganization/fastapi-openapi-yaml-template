@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# generate_all.py
 """
 OpenAPI YAML-first 統合生成スクリプト
 
@@ -83,6 +84,9 @@ def main():
             print(f"❌ {description} でエラーが発生しました。処理を中断します。")
             return 1
         print()
+
+    # 生成物を常に整形
+    run_command("make format", "コードフォーマット実行", cwd=str(project_root))
 
     print("🎉 すべての生成処理が完了しました！")
     print()
