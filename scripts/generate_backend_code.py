@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# generate_backend_code.py
 """
 OpenAPI YAML ファーストアプローチ用のコード生成スクリプト
 
@@ -20,10 +21,15 @@ SERVICES_DIR = Path(__file__).resolve().parent.parent / "app" / "services"
 
 def find_service_module(tag: str) -> str:
     """タグ名から適切なサービスモジュールを探索します。"""
+    tag_path = SERVICES_DIR / tag
+    if tag_path.is_dir():
+        return tag  # ディレクトリが存在する場合はそれをサービスモジュールと見なす
+
     candidates = [tag, f"{tag}_service"]
     for candidate in candidates:
         if (SERVICES_DIR / f"{candidate}.py").exists():
             return candidate
+
     return "old_service"
 
 
@@ -279,7 +285,7 @@ def convert_openapi_type_to_python(prop_def: dict[str, Any]) -> str:
     elif prop_type == "integer":
         return "int"
     elif prop_type == "number":
-    for tag in sorted(tags, key=lambda t: t["name"]):
+        return "float"
     elif prop_type == "boolean":
         return "bool"
     elif prop_type == "array":
@@ -354,9 +360,8 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
         )
         router_definitions.append(router_def)
 
-    for service_module in sorted(service_imports):
-        function_names = service_imports[service_module]
-    for schema_name in sorted(schemas.keys()):
+    # レガシールーター（プレフィックスなし）の処理
+    legacy_needed = False
     paths = spec.get("paths", {})
     for path in paths.keys():
         if not path.startswith("/api/v1/"):
@@ -372,66 +377,64 @@ def generate_router_definitions(spec: dict[str, Any]) -> str:
 
 def extract_service_imports_from_spec(spec: dict[str, Any]) -> dict[str, list[str]]:
     """OpenAPI仕様からサービス関数のインポートを抽出します。"""
-    service_imports = {}  # サービスモジュール名 -> 関数名一覧
+    service_imports: dict[str, list[str]] = {}
     paths = spec.get("paths", {})
 
     for path, methods in paths.items():
         for method, operation in methods.items():
-            if method.lower() in ["get", "post", "put", "delete", "patch"]:
-                operation_id = operation.get("operationId", "")
-                if operation_id:
-                    # 明示的なマッピングがなければHTTPメソッド接頭辞で生成
+            if method.lower() not in ["get", "post", "put", "delete", "patch"]:
+                continue
 
-                    # タグまたはパスからサービスモジュール名を決定
-                    http_method = method.lower()
-                    # Check if operation_id already contains an HTTP method prefix
-                    has_method_prefix = bool(
-                        re.match(r"^(get|post|put|delete|patch)_", operation_id)
-                    )
+            operation_id = operation.get("operationId", "")
+            if not operation_id:
+                print(
+                    f"⚠️ operationIdが指定されていません: {path} {method}. operationIdを設定してください。"
+                )
+                continue
 
-                    if has_method_prefix:
-                        # If operation_id already has a method prefix, use it as-is and add _impl
-                        service_function_name = f"{operation_id}_impl"
-                    else:
-                        # Otherwise, prepend the HTTP method and add _impl
-                        service_function_name = f"{http_method}_{operation_id}_impl"
-                        # 可読性向上のためインポートを複数行に分割
+            http_method = method.lower()
+            has_method_prefix = bool(
+                re.match(r"^(get|post|put|delete|patch)_", operation_id)
+            )
 
-                        match = re.search(r"/api/v1/([^/]+)/", path)
-                        tag = match.group(1) if match else "default"
+            if has_method_prefix:
+                service_function_name = f"{operation_id}_impl"
+            else:
+                service_function_name = f"{http_method}_{operation_id}_impl"
 
-                    service_module = find_service_module(tag)
+            # タグの抽出
+            tags = operation.get("tags", [])
+            tag = tags[0] if tags else "default"
 
-                    if service_module not in service_imports:
-                        service_imports[service_module] = []
-                        service_imports[service_module].append(service_function_name)
-                else:
-                    # operation_idを指定してくださいとエラー
-                    print(
-                        f"⚠️ operationIdが指定されていません: {path} {method}. operationIdを設定してください。"
-                    )
-                    continue
+            # モジュール名の決定
+            service_module = find_service_module(tag)
+
+            if service_module not in service_imports:
+                service_imports[service_module] = []
+            service_imports[service_module].append(service_function_name)
 
     return service_imports
 
 
 def generate_service_imports(service_imports: dict[str, list[str]]) -> str:
-    """サービスインポート文を生成します。"""
+    """サービスインポート文を生成します（余計なカンマを除去）"""
     import_lines = []
 
     for service_module, function_names in service_imports.items():
-        function_names_sorted = sorted(
-            set(function_names)
-        )  # Remove duplicates and sort
+        function_names_sorted = sorted(set(function_names))
+
         if len(function_names_sorted) == 1:
+            # 関数が1つだけなら1行でimport
             import_line = (
                 f"from app.services.{service_module} import {function_names_sorted[0]}"
             )
         else:
-            # Multi-line import for better readability
+            # 複数関数ならマルチライン（カンマの位置も適切に）
             functions_str = ",\n    ".join(function_names_sorted)
             import_line = (
-                f"from app.services.{service_module} import (\n    {functions_str},\n)"
+                f"from app.services.{service_module} import (\n"
+                f"    {functions_str},\n"
+                f")"
             )
         import_lines.append(import_line)
 
@@ -640,9 +643,15 @@ def main():
     print("🚀 OpenAPI YAML-firstコード生成を開始...")
 
     # パス設定
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parent.parent
     yaml_path = project_root / "source" / "openapi.yaml"
     output_dir = project_root / "app" / "generated"
+
+    # 生成ディレクトリがパッケージとして認識されるよう__init__.pyを作成
+    output_dir.mkdir(parents=True, exist_ok=True)
+    init_file = output_dir / "__init__.py"
+    if not init_file.exists():
+        init_file.write_text("# generated package\n", encoding="utf-8")
 
     if not yaml_path.exists():
         print(f"❌ OpenAPI YAML ファイルが見つかりません: {yaml_path}")

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# generate_all.py
 """
 OpenAPI YAML-first 統合生成スクリプト
 
@@ -65,17 +66,16 @@ def main():
     print(f"📖 OpenAPI YAML仕様を確認: {yaml_path}")
     print()
 
-    python_cmd = "poetry run python"
     steps = [
         (
-            f"{python_cmd} scripts/generate_frontend_code.py",
+            f'"{sys.executable}" scripts/generate_frontend_code.py',
             "TypeScript型定義・OpenAPIファイル生成",
         ),
         (
-            f"{python_cmd} scripts/generate_backend_code.py",
+            f'"{sys.executable}" scripts/generate_backend_code.py',
             "Pydanticモデル・FastAPIルーター生成",
         ),
-        (f"{python_cmd} scripts/generate_docs.py", "HTMLドキュメント生成"),
+        (f'"{sys.executable}" scripts/generate_docs.py', "HTMLドキュメント生成"),
     ]
 
     for command, description in steps:
