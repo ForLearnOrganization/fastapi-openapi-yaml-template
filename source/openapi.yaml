@@ -3,14 +3,14 @@ info:
   title: localLLM-FastAPI
   description: |
     FastAPI経由で、localLLMを動かすスケーラブルなAPIアプリケーション
-    
+
     ## 機能
     - 🔄 テキスト生成とエコー
     - ❤️ ヘルスチェック
     - 🌐 外部API統合（モック）
     - 📖 自動生成ドキュメント
     - 🔧 TypeScript型生成対応
-    
+
     ## 開発者向け情報
     本APIは手書きのOpenAPI YAMLスキーマから自動生成されたコードベースです。
     スキーマファーストの開発アプローチを採用しています。
@@ -45,12 +45,12 @@ paths:
       description: APIサーバーの基本動作確認
       operationId: health_check
       responses:
-        '200':
+        "200":
           description: サーバー正常
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
               example:
                 status: "healthy"
                 timestamp: "2024-01-01T00:00:00Z"
@@ -62,12 +62,12 @@ paths:
       description: システムの詳細情報とヘルス状態
       operationId: detailed_health_check
       responses:
-        '200':
+        "200":
           description: 詳細ヘルス情報
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailedHealthResponse'
+                $ref: "#/components/schemas/DetailedHealthResponse"
 
   # テキスト処理エンドポイント
   /api/v1/text/generate:
@@ -81,30 +81,30 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateTextRequest'
+              $ref: "#/components/schemas/GenerateTextRequest"
             example:
               prompt: "こんにちは世界"
               max_length: 100
               temperature: 0.7
       responses:
-        '200':
+        "200":
           description: テキスト生成成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenerateTextResponse'
+                $ref: "#/components/schemas/GenerateTextResponse"
               example:
                 generated_text: "こんにちは世界！今日は素晴らしい日ですね。"
                 input_prompt: "こんにちは世界"
                 metadata:
                   method: "rule_based"
                   length: 25
-        '422':
+        "422":
           description: 入力検証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/text/echo:
     post:
@@ -117,16 +117,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EchoTextRequest'
+              $ref: "#/components/schemas/EchoTextRequest"
             example:
               text: "分析対象のテキスト"
       responses:
-        '200':
+        "200":
           description: エコー成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EchoTextResponse'
+                $ref: "#/components/schemas/EchoTextResponse"
 
   # 外部API統合エンドポイント
   /api/v1/external/weather:
@@ -140,16 +140,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WeatherRequest'
+              $ref: "#/components/schemas/WeatherRequest"
             example:
               city: "東京"
       responses:
-        '200':
+        "200":
           description: 天気情報
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WeatherResponse'
+                $ref: "#/components/schemas/WeatherResponse"
 
   /api/v1/external/quote:
     get:
@@ -158,12 +158,12 @@ paths:
       description: インスピレーション名言の取得（モックデータ）
       operationId: get_random_quote
       responses:
-        '200':
+        "200":
           description: 名言
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QuoteResponse'
+                $ref: "#/components/schemas/QuoteResponse"
 
   /api/v1/external/fact:
     get:
@@ -172,12 +172,12 @@ paths:
       description: 興味深い豆知識の取得（モックデータ）
       operationId: get_random_fact
       responses:
-        '200':
+        "200":
           description: 豆知識
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FactResponse'
+                $ref: "#/components/schemas/FactResponse"
 
   /api/v1/external/joke:
     get:
@@ -186,12 +186,12 @@ paths:
       description: 開発者向けユーモア（モックデータ）
       operationId: get_programming_joke
       responses:
-        '200':
+        "200":
           description: ジョーク
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JokeResponse'
+                $ref: "#/components/schemas/JokeResponse"
 
   # 後方互換性エンドポイント
   /generate:
@@ -205,14 +205,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateTextRequest'
+              $ref: "#/components/schemas/GenerateTextRequest"
       responses:
-        '200':
+        "200":
           description: テキスト生成成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenerateTextResponse'
+                $ref: "#/components/schemas/GenerateTextResponse"
 
 components:
   schemas:
