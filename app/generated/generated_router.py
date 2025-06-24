@@ -20,7 +20,7 @@ from app.generated.generated_models import (
     WeatherRequest,
     WeatherResponse,
 )
-from app.services.external_service import (
+from app.services.external import (
     get_programming_joke_impl,
     get_random_fact_impl,
     get_random_quote_impl,
@@ -30,7 +30,7 @@ from app.services.health import (
     get_detailed_health_check_impl,
     get_health_check_impl,
 )
-from app.services.text_service import (
+from app.services.text import (
     post_echo_text_impl,
     post_generate_text_impl,
     post_generate_text_legacy_impl,
@@ -103,5 +103,4 @@ main_router.include_router(health_router)
 main_router.include_router(text_router)
 main_router.include_router(external_router)
 
-# Legacy router should be separate (not include in main_router)
-# so it can be mounted without /api/v1 prefix
+# legacy_routerはmain_routerに含めず、/api/v1を付けずにマウントするため別扱い
