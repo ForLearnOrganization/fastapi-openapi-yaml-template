@@ -1,0 +1,61 @@
+{
+  // Python設定
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  
+  // Ruff設定 - リンター及びフォーマッター
+  "python.linting.enabled": true,
+  "python.linting.ruffEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.linting.pylintEnabled": false,
+  "python.linting.mypyEnabled": false,
+  
+  // flake8を完全に無効化（VS Code拡張機能レベル）
+  "flake8.enabled": false,
+  "python.analysis.ignore": ["*.py"],
+  "python.analysis.autoImportCompletions": false,
+  
+  // Ruffフォーマッター設定
+  "python.formatting.provider": "none",
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  
+  // ファイル保存時の設定
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  
+  // Python環境変数設定 - __pycache__ディレクトリを統合
+  "python.terminal.activateEnvironment": true,
+  "python.envFile": "${workspaceFolder}/.env.example",
+  
+  // その他のエディタ設定
+  "editor.rulers": [88],
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  
+  // YAML設定
+  "[yaml]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  
+  // JSON設定
+  "[json]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  
+  // 生成ファイル用の設定を除外
+  "files.associations": {
+    "**/generated/*.py": "python"
+  }
+}
