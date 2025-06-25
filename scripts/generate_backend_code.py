@@ -30,7 +30,7 @@ def find_service_module(tag: str) -> str:
         if (SERVICES_DIR / f"{candidate}.py").exists():
             return candidate
 
-    return "old_service"
+    return "legacy"
 
 
 def load_openapi_spec(yaml_path: str) -> dict[str, Any]:
@@ -586,6 +586,40 @@ def generate_endpoint_body(
         return f"    return await {service_function_name}_impl()"
 
 
+def update_services_init_imports():
+    """
+    app/services配下の各ディレクトリごとに、
+    そのディレクトリ内の_impl関数を自動検出し、
+    __init__.pyにimport文を生成・更新する。
+    """
+    import ast
+
+    services_dir = SERVICES_DIR
+    for tag_dir in services_dir.iterdir():
+        if tag_dir.is_dir() and not tag_dir.name.startswith("__"):
+            impls = []
+            for file in tag_dir.glob("*.py"):
+                if file.name == "__init__.py":
+                    continue
+                rel_module = file.stem
+                with open(file, encoding="utf-8") as f:
+                    tree = ast.parse(f.read(), filename=str(file))
+                    for node in tree.body:
+                        if isinstance(
+                            node, ast.AsyncFunctionDef
+                        ) and node.name.endswith("_impl"):
+                            impls.append((rel_module, node.name))
+            # import文を生成
+            import_lines = ["# ruff: noqa: F401"] if impls else []
+            for module, func in sorted(impls):
+                import_lines.append(f"from .{module} import {func}")
+            # __init__.pyに書き込み
+            init_path = tag_dir / "__init__.py"
+            with open(init_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(import_lines) + ("\n" if import_lines else ""))
+            print(f"✅ {init_path} に_impl関数のimport文を更新しました")
+
+
 def main():
     """メイン処理"""
     print("🚀 OpenAPI YAML-firstコード生成を開始...")
@@ -618,6 +652,9 @@ def main():
 
         # サービス内に関数生成
         generate_service_impls(spec)
+
+        # __init__.pyのimport文を更新
+        update_services_init_imports()
 
         # 生成されたファイルをフォーマット
         format_generated_files(output_dir)
